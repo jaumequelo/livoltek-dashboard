@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b1220">
+<title>Dashboard Fotovoltaica · Livoltek</title>
+<style>
+  :root{--bg:#0b1220;--card:#111a2e;--card2:#0e1626;--txt:#e6edf7;--mut:#8fa3bf;
+        --amber:#fbbf24;--sky:#38bdf8;--vio:#a78bfa;--eme:#34d399;--rose:#fb7185;--line:#1e2c47}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:radial-gradient(1200px 600px at 70% -10%,#14224a 0%,var(--bg) 55%);color:var(--txt);
+       font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:18px;display:flex;flex-direction:column}
+  button{touch-action:manipulation}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+  h1{font-size:20px;font-weight:600} h1 span{color:var(--amber)}
+  .badge{padding:3px 10px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--mut)}
+  .badge.on{color:#86efac;border-color:#14532d;background:#052e1655}
+  .badge.off{color:#fca5a5;border-color:#7f1d1d;background:#450a0a55}
+  .badge.demo{color:#fcd34d;border-color:#78350f;background:#451a0355}
+  .badge.site{color:#7dd3fc;border-color:#0c4a6e;background:#082f4955;font-weight:600}
+  .spacer{flex:1}
+  /* Próxima actualización + Actualizado: siempre en la misma línea */
+  .refresh-info{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
+  #nextIn{font-size:12px;color:var(--mut)}
+  button{background:#1c2b4a;color:var(--txt);border:1px solid var(--line);border-radius:10px;
+         padding:8px 14px;font-size:13px;cursor:pointer;transition:.15s}
+  button:hover{background:#24375e}
+  button.primary{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#111;font-weight:600;border:none}
+  .wrap{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);gap:16px;flex:1}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;padding:16px}
+  .card h2{font-size:13px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .svg-scroll{width:100%;max-width:560px;margin:0 auto}
+  .svg-scroll svg{display:block;width:100%;height:auto}
+  #btnForecast{cursor:pointer}
+  #btnForecast:hover rect{fill:#24375e}
+  .flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:9 9;animation:dash .8s linear infinite}
+  .flow.idle{opacity:.4;animation-play-state:paused}
+  @keyframes dash{to{stroke-dashoffset:-18}}
+  #flowPv{stroke:#64748b;marker-end:url(#mGray)}
+  #flowPv.on{stroke:var(--eme);marker-end:url(#mEme)}
+  #flowPv.idle{stroke:#64748b;marker-end:url(#mGray)}
+  #flowBat{stroke:#64748b;marker-end:url(#mGray)}
+  #flowBat.charge{stroke:var(--eme);marker-end:url(#mEme)}
+  #flowBat.discharge{stroke:var(--amber);marker-end:url(#mAmber)}
+  #flowBat.low{stroke:var(--rose);marker-end:url(#mRose)}
+  #flowHouse{stroke:var(--eme);marker-end:url(#mEme)}
+  #flowGrid{stroke:var(--eme);marker-end:url(#mEme)}
+  #flowGrid.import{stroke:var(--amber);marker-end:url(#mAmber)}
+  #flowGrid.idle{stroke:#64748b;marker-end:url(#mGray)}
+  .lbl{font:700 16px 'Segoe UI',sans-serif}
+  .lbl2{font:600 12.5px 'Segoe UI',sans-serif}
+  .sub{font:12px 'Segoe UI',sans-serif;fill:#8fa3bf}
+  .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px}
+  .kpi{background:#0d1526;border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+  .kpi .t{font-size:11px;color:var(--mut);margin-bottom:6px}
+  .kpi .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
+  .kpi .v small{font-size:11px;color:var(--mut);font-weight:400}
+  .c-amber{color:var(--amber)} .c-sky{color:var(--sky)} .c-vio{color:var(--vio)}
+  .c-eme{color:var(--eme)} .c-rose{color:var(--rose)} .c-mut{color:var(--mut)}
+  .acc-note{font-size:11px;color:var(--sky);margin-top:8px}
+  aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+  #chartCanvas{width:100%;height:180px}
+  #chartNote{font-size:11px;color:var(--mut)}
+  dialog{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:16px;padding:22px;
+         width:min(600px,92vw);max-height:92vh;overflow-y:auto}
+  dialog::backdrop{background:#000a;backdrop-filter:blur(3px)}
+  dialog h3{margin-bottom:4px}
+  dialog p.hint{font-size:12px;color:var(--mut);margin-bottom:14px}
+  .frm{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .frm label{font-size:12px;color:var(--mut);display:flex;flex-direction:column;gap:4px}
+  .frm label.full{grid-column:1/-1}
+  input,select{background:#0a1120;border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:8px 10px;font-size:13px;width:100%}
+  .frm .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
+  .note{font-size:11px;color:#f59e0b;background:#451a0333;border:1px solid #78350f;border-radius:8px;padding:8px 10px;grid-column:1/-1}
+  .spin{animation:sp 1s linear infinite;display:inline-block}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .load-overlay{position:fixed;inset:0;background:rgba(4,10,25,.78);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+  .load-overlay[hidden]{display:none}
+  .load-box{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
+    border-radius:18px;padding:28px 36px;display:flex;flex-direction:column;align-items:center;gap:16px;
+    text-align:center;box-shadow:0 12px 44px #000a;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+  .load-spinner{width:48px;height:48px;border-radius:50%;border:4px solid var(--line);
+    border-top-color:var(--amber);border-right-color:var(--amber);animation:sp .9s linear infinite}
+  .load-text{font-size:14px;color:var(--txt);line-height:1.55}
+  .load-text small{display:block;color:var(--mut);font-size:11px;margin-top:6px}
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
+  .status-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 10px;background:#0a1120;border:1px solid var(--line);border-radius:8px;min-width:0}
+  .led{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+  .led-ok{background:#34d399;color:#34d399}.led-warn{background:#fbbf24;color:#fbbf24}
+  .led-off{background:#64748b;color:#64748b}.led-err{background:#fb7185;color:#fb7185}
+  .status-item .name{color:var(--mut);flex-shrink:0}
+  .status-item .val{color:var(--txt);margin-left:auto;font-family:Consolas,monospace;font-size:11px;text-align:right;overflow-wrap:anywhere}
+  .val-ok{color:#34d399 !important}.val-warn{color:#fbbf24 !important}
+  .val-err{color:#fb7185 !important}.val-mut{color:var(--mut) !important}
+  .plant-info{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px}
+  .plant-info dt{color:var(--mut)} .plant-info dd{color:var(--txt);font-weight:500;overflow-wrap:anywhere}
+  .section-title{font-size:14px;color:var(--txt);margin:16px 0 4px;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .mini-kpi{font-size:13px;padding:8px 12px;background:#0d1526;border:1px solid var(--line);border-radius:8px;
+            display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  .mini-kpi .lbl{color:var(--mut);font-size:11px}
+  .mini-kpi .val{color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+  .mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
+  #logDlg{width:min(860px,94vw)}
+  #logBox{font-size:11px;color:var(--mut);white-space:pre-wrap;word-break:break-all;max-height:60vh;overflow:auto;
+          background:#0a1120;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:Consolas,monospace;margin-top:10px}
+  .dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .fc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+  .fc-day{background:#0d1526;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .fc-day .d{font-size:12px;color:var(--mut);text-transform:capitalize;margin-bottom:6px}
+  .fc-day .ico{font-size:28px}
+  .fc-day .desc{font-size:11px;color:var(--txt);margin:4px 0}
+  .fc-day .temps{font-size:15px;font-weight:700}
+  .fc-day .temps small{color:var(--mut);font-weight:400}
+  .fc-day .extra{font-size:10px;color:var(--mut);margin-top:6px;line-height:1.6}
+  .footer{margin-top:22px;text-align:center;font-size:12px;color:var(--mut);padding:10px 0 2px}
+  .footer-actions{display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .footer-actions button{min-width:160px;padding:11px 16px}
+  .footer a{color:var(--sky);text-decoration:none;font-weight:600}
+  .footer a:hover{text-decoration:underline}
+  .footer .heart{color:var(--rose);display:inline-block;animation:beat 1.6s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}10%{transform:scale(1.25)}20%{transform:scale(1)}30%{transform:scale(1.15)}40%{transform:scale(1)}}
+  @media(max-width:980px){ .wrap{grid-template-columns:1fr} body{padding:14px} }
+  @media(max-width:760px){
+    body{padding:10px}
+    header{gap:8px;margin-bottom:12px}
+    h1{font-size:17px;flex:1 1 100%}
+    #nextIn{font-size:11px}
+    .refresh-info .badge{font-size:10px;padding:2px 8px}
+    button{padding:10px 13px;font-size:12px;border-radius:12px}
+    .badge{font-size:11px}
+    .card{padding:12px;border-radius:14px}
+    .kpi{padding:10px}
+    .kpi .v{font-size:17px}
+    .kpirow{grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}
+    .section-title{font-size:13px}
+    .status-grid{grid-template-columns:1fr 1fr;gap:8px}
+    .mini-grid{grid-template-columns:1fr 1fr;gap:8px}
+    .frm{grid-template-columns:1fr}
+    dialog{padding:16px;width:94vw}
+    .footer{font-size:11px}
+    .footer-actions button{flex:1 1 40%;min-width:140px}
+    .load-box{padding:22px 24px}
+    .load-text{font-size:13px}
+  }
+  @media(max-width:460px){
+    .kpirow{grid-template-columns:1fr 1fr}
+    .kpi .v{font-size:15px}
+    .status-grid{grid-template-columns:1fr}
+    .mini-grid{grid-template-columns:1fr}
+    header button{flex:1 1 auto}
+    .refresh-info{flex:1 1 100%;order:10;justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<div id="loadOverlay" class="load-overlay" hidden>
+  <div class="load-box">
+    <div class="load-spinner"></div>
+    <div class="load-text">Cargando datos desde el inversor,<br>espere un momento…
+      <small>Consultando Livoltek Cloud (EMEA)</small>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1>☀️ Monitor Fotovoltaica · <span>Livoltek</span></h1>
+  <span id="statusBadge" class="badge">Sin conectar</span>
+  <span id="siteName" class="badge site"></span>
+  <div class="spacer"></div>
+  <div class="refresh-info">
+    <span id="nextIn">Próxima actualización: 5m 0s</span>
+    <span id="lastUpd" class="badge">—</span>
+  </div>
+  <button id="btnRefresh" class="primary">⟳ Actualizar ahora</button>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2>Diagrama del sistema (flujo en vivo)</h2>
+      <div class="svg-scroll">
+      <svg viewBox="0 0 480 460">
+        <defs>
+          <marker id="mGray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+          <marker id="mAmber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/></marker>
+          <marker id="mViolet" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a78bfa"/></marker>
+          <marker id="mSky" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#38bdf8"/></marker>
+          <marker id="mEme" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#34d399"/></marker>
+          <marker id="mRose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fb7185"/></marker>
+          <linearGradient id="gradInv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#42a5f5"/><stop offset="1" stop-color="#1565c0"/></linearGradient>
+        </defs>
+
+        <rect x="140" y="6" width="200" height="96" rx="10" fill="#0d1526" stroke="#1e2c47"/>
+        <text id="wxCity" x="152" y="24" class="lbl2" fill="#8fa3bf" style="letter-spacing:.08em">METEO EN DIRECTO</text>
+        <text id="wxNow" x="152" y="44" class="lbl2" fill="#e6edf7">🌡 — · —</text>
+        <text id="wxSun" x="152" y="62" class="lbl2" fill="#8fa3bf">🌅 — · 🌇 —</text>
+        <g id="btnForecast">
+          <rect x="152" y="72" width="176" height="24" rx="12" fill="#1c2b4a" stroke="#1e2c47"/>
+          <text x="240" y="88" text-anchor="middle" class="lbl2" fill="#e6edf7">📅 Previsión próximos 3 días</text>
+        </g>
+
+        <circle cx="88" cy="106" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="66" y="90" width="44" height="30" rx="2" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <line x1="66" y1="100" x2="110" y2="100" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="66" y1="110" x2="110" y2="110" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="81" y1="90" x2="81" y2="120" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="96" y1="90" x2="96" y2="120" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="88" y1="120" x2="88" y2="128" stroke="#f59e0b" stroke-width="2.5"/>
+        <text x="88" y="173" class="sub" text-anchor="middle">Paneles</text>
+        <text id="txtPv" x="88" y="191" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+        <text id="txtPvPct" x="88" y="207" class="lbl2" text-anchor="middle" fill="#34d399">—</text>
+
+        <circle cx="392" cy="106" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="378" y="84" width="28" height="44" rx="4" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <rect x="386" y="79" width="12" height="5" rx="2" fill="#e6edf7"/>
+        <rect id="batFill" x="381" y="87" width="22" height="38" rx="2" fill="#34d399" opacity=".9"/>
+        <text x="392" y="173" class="sub" text-anchor="middle">Baterías</text>
+        <text id="txtBat" x="392" y="191" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+        <text id="txtSoc" x="392" y="207" class="lbl2" text-anchor="middle" fill="#a78bfa">—</text>
+
+        <circle cx="88" cy="362" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <g stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <path d="M88,340 L74,384 M88,340 L102,384"/>
+          <path d="M78,354 L98,354 M76,366 L100,366 M74,378 L102,378"/>
+        </g>
+        <text x="88" y="429" class="sub" text-anchor="middle">Red</text>
+        <text id="txtGrid" x="88" y="447" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+
+        <circle cx="392" cy="362" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <path d="M374,356 L392,340 L410,356" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <rect x="378" y="356" width="28" height="26" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <path d="M394,360 L388,370 L392,370 L390,378 L398,367 L393,367 Z" fill="#38bdf8"/>
+        <text x="392" y="429" class="sub" text-anchor="middle">Casa</text>
+        <text id="txtHouse" x="392" y="447" class="lbl" text-anchor="middle" fill="#34d399">—</text>
+
+        <circle cx="240" cy="234" r="60" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="219" y="196" width="42" height="64" rx="5" fill="url(#gradInv)" stroke="#0d47a1" stroke-width="1.5"/>
+        <line x1="240" y1="206" x2="240" y2="236" stroke="#7CFC00" stroke-width="3" stroke-linecap="round"/>
+        <circle id="invLed" cx="240" cy="248" r="4" fill="#64748b"/>
+        <text id="invScreenTxt" x="240" y="272" class="lbl2" text-anchor="middle" fill="#7dd3fc">— kW</text>
+        <text x="240" y="308" class="sub" text-anchor="middle" style="font-weight:700" fill="#cbd5e1">INVERSOR</text>
+
+        <path id="flowPv"    class="flow idle" d="M120,142 C172,150 200,174 210,202"/>
+        <path id="flowBat"   class="flow idle" d="M270,202 C280,174 308,150 360,142"/>
+        <path id="flowGrid"  class="flow idle" d="M210,266 C200,294 172,318 120,326"/>
+        <path id="flowHouse" class="flow idle" d="M270,266 C280,294 308,318 360,326"/>
+        <g id="gridX" style="display:none" stroke="#fb7185" stroke-width="4.5" stroke-linecap="round">
+          <line x1="172" y1="295" x2="190" y2="313"/>
+          <line x1="190" y1="295" x2="172" y2="313"/>
+        </g>
+      </svg>
+      </div>
+    </div>
+
+    <div class="section-title">⚡ Potencias instantáneas</div>
+    <div class="kpirow">
+      <div class="kpi"><div class="t">☀️ Producción paneles</div><div class="v c-amber" id="valPv">—</div></div>
+      <div class="kpi"><div class="t">🏠 Consumo casa</div><div class="v c-sky" id="valHouse">—</div></div>
+      <div class="kpi"><div class="t">🔌 Red</div><div class="v c-eme" id="valGrid">—</div></div>
+      <div class="kpi"><div class="t">🔋 Batería</div><div class="v c-vio" id="valBat">—</div></div>
+      <div class="kpi"><div class="t">📊 Nivel de baterías</div><div class="v c-vio" id="valSoc">—</div></div>
+    </div>
+
+    <div class="section-title">📟 Estado de subsistemas</div>
+    <div class="status-grid">
+      <div class="status-item"><span class="led led-off" id="ledPv"></span><span class="name">Paneles solares</span><span class="val" id="stPv">—</span></div>
+      <div class="status-item"><span class="led led-off" id="ledGrid"></span><span class="name">Red</span><span class="val" id="stGrid">—</span></div>
+      <div class="status-item"><span class="led led-off" id="ledLoad"></span><span class="name">Casa</span><span class="val" id="stLoad">—</span></div>
+      <div class="status-item"><span class="led led-off" id="ledBat"></span><span class="name">Baterías</span><span class="val" id="stBat">—</span></div>
+      <div class="status-item"><span class="led led-off" id="ledSite"></span><span class="name">Planta</span><span class="val" id="stSite">—</span></div>
+    </div>
+
+    <div class="section-title">📊 Energía acumulada (kWh)</div>
+    <div class="kpirow">
+      <div class="kpi"><div class="t">🌞 Generación hoy</div><div class="v c-amber" id="valToday">—</div></div>
+      <div class="kpi"><div class="t">📅 Generación mes</div><div class="v c-amber" id="valMonth">—</div></div>
+      <div class="kpi"><div class="t">🗓️ Generación año</div><div class="v c-amber" id="valYear">—</div></div>
+      <div class="kpi"><div class="t">📈 Generación total</div><div class="v c-amber" id="valTotal">—</div></div>
+      <div class="kpi"><div class="t">🌱 CO₂ evitado</div><div class="v c-eme" id="valCo2">—</div></div>
+      <div class="kpi"><div class="t">⏱️ Último dato</div><div class="v" id="valLastTs" style="font-size:14px">—</div></div>
+    </div>
+    <div class="acc-note" id="accNote"></div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Info de la planta</h2>
+      <dl class="plant-info">
+        <dt>Nombre</dt><dd id="piName">—</dd>
+        <dt>ID</dt><dd id="piId">—</dd>
+        <dt>Tipo</dt><dd id="piType">—</dd>
+        <dt>País</dt><dd id="piCountry">—</dd>
+        <dt>Capacidad PV</dt><dd id="piCapacity">—</dd>
+        <dt>Zona horaria</dt><dd id="piTz">—</dd>
+        <dt>Dispositivos online</dt><dd id="piOnline">—</dd>
+        <dt>Potencia actual</dt><dd id="piPower">—</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Resumen de baterías</h2>
+      <div class="mini-grid">
+        <div class="mini-kpi"><span class="lbl">Nivel de baterías</span><span class="val" id="bdSoc">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Estado</span><span class="val" id="bdStatus">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Ciclos</span><span class="val" id="bdCycles">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Capacidad BMS</span><span class="val" id="bdCap">—</span></div>
+        <div class="mini-kpi"><span class="lbl">SN Batería</span><span class="val" id="bdSn">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Voltaje últ.</span><span class="val" id="bdVolt">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Carga día <span id="bdChargeDay"></span></span><span class="val" id="bdCharge">—</span></div>
+        <div class="mini-kpi"><span class="lbl">Descarga día</span><span class="val" id="bdDischarge">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generación · últimos días (kWh)</h2>
+      <canvas id="chartCanvas"></canvas>
+      <div id="chartNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="footer">
+  <div class="footer-actions">
+    <button id="btnLog">📋 Registro</button>
+    <button id="btnSettings">⚙ Configuración</button>
+  </div>
+  Hecho en Peñíscola con <span class="heart">❤</span> por
+  <a href="https://jaumequelo.online" target="_blank" rel="noopener">Jaumequelo.online</a>
+</footer>
+
+<dialog id="fcDlg">
+  <h3>📅 Previsión meteorológica · <span id="fcCity"></span></h3>
+  <p class="hint">Próximos 3 días · fuente Open-Meteo</p>
+  <div id="fcBody"></div>
+  <div class="dlg-actions"><button id="btnCloseFc">Cerrar</button></div>
+</dialog>
+
+<dialog id="logDlg">
+  <h3>📋 Registro / depuración API</h3>
+  <p class="hint">Todas las líneas del registro de la sesión. Útil para depurar la conexión.</p>
+  <div id="logBox">Listo.</div>
+  <div class="dlg-actions">
+    <button id="btnClearLog">🗑 Limpiar</button>
+    <button id="btnCopyLog" class="primary">📄 Copiar registro</button>
+    <button id="btnCloseLog">Cerrar</button>
+  </div>
+</dialog>
+
+<dialog id="dlg">
+  <h3>⚙ Conexión con la API Livoltek</h3>
+  <p class="hint">Necesitas <b>token + Secure ID (secuid/key)</b> de <b>www.livoltek-portal.com → My Profile</b>. Servidor fijo: <b>EMEA/Europa</b>.</p>
+  <div class="frm">
+    <label class="full">Modo
+      <select id="cfgDemo"><option value="1">🧪 Demo (datos simulados)</option><option value="0">🔴 Real (API Livoltek)</option></select>
+    </label>
+    <label class="full">Token de usuario <input id="cfgUserToken" placeholder="pegar token"></label>
+    <label>Security ID <input id="cfgSecuid" placeholder="32 caracteres"></label>
+    <label>API Key <input id="cfgKey" placeholder="termina en rn"></label>
+    <label class="full">Planta (site)
+      <span style="display:flex;gap:6px"><select id="cfgSiteId" style="flex:1"></select><button id="btnSites" type="button">🔎 Cargar plantas</button></span>
+    </label>
+    <label class="full">🏙️ Ciudad de la planta (para el meteo)
+      <span style="display:flex;gap:6px">
+        <input id="cfgCity" placeholder="p. ej. Peñíscola" style="flex:1">
+        <button id="btnGeo" type="button">📍 Obtener ubicación</button>
+      </span>
+    </label>
+    <label>Tipo de usuario
+      <select id="cfgUserType"><option value="0">0 · Usuario final</option><option value="1">1 · Instalador</option></select>
+    </label>
+    <label>Unidad potencias
+      <select id="cfgUnit"><option value="auto">Auto (recomendado)</option><option value="kW">kW</option><option value="W">W</option></select>
+    </label>
+    <label style="flex-direction:row;align-items:center;gap:8px">
+      <input type="checkbox" id="cfgFlipGrid" style="width:auto"> Invertir sentido de red
+    </label>
+    <label style="flex-direction:row;align-items:center;gap:8px">
+      <input type="checkbox" id="cfgFlipBat" style="width:auto"> Invertir sentido de batería
+    </label>
+    <div class="actions">
+      <button id="btnClose">Cancelar</button>
+      <button id="btnSave" class="primary">💾 Guardar y conectar</button>
+    </div>
+    <div class="note">⚠️ Si el navegador bloquea por CORS, usa una extensión "Allow CORS". Meteo: Open-Meteo (gratis, sin clave). La geolocalización requiere HTTPS y tu permiso.</div>
+  </div>
+</dialog>
+
+<script>
+const REFRESH_MS = 300000;
+const $ = id => document.getElementById(id);
+let cfg = JSON.parse(localStorage.getItem('pvDashCfg')||'null') ||
+  {demo:'1',userToken:'',secuid:'',key:'',siteId:'',siteName:'',city:'',userType:'0',flipGrid:false,flipBat:false,unit:'auto',authToken:null,tokenExp:0,geo:null,devId:null,devSn:null};
+cfg.unit = cfg.unit || 'auto';
+let countdown = REFRESH_MS/1000, simToday=9.6, simSoc=62, simTotal=12486.3;
+let LOG = '', lastDays = null;
+let energyTrack = JSON.parse(localStorage.getItem('pvEnergyTrack')||'null') || {day:'',today:0,lastTs:null,hist:{}};
+
+const BASE = () => 'https://api-eu.livoltek-portal.com:8081';
+const log = m => { LOG = `[${new Date().toLocaleTimeString()}] ${m}\n` + LOG; $('logBox').textContent = LOG || 'Listo.'; };
+const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
+const save = () => localStorage.setItem('pvDashCfg',JSON.stringify(cfg));
+const pick = (o,names) => { for(const n of names){ if(o && o[n]!=null && o[n]!=='') return o[n]; } return null; };
+const parseMaybeJson = s => { if(typeof s==='string'){ try{ return JSON.parse(s); }catch(e){ return null; } } return s; };
+const dayKey = d => (d||new Date()).toLocaleDateString('sv');
+
+const esNum = (v,d=2) => v==null?'—':Number(v).toFixed(d).replace('.',',');
+const fmtCount = s => { const m=Math.floor(s/60), ss=s%60; return m>0 ? `${m}m ${ss}s` : `${ss}s`; };
+function toKw(v){
+  const n = num(v); if(n==null) return null;
+  if(cfg.unit==='W') return n/1000;
+  if(cfg.unit==='kW') return n;
+  return Math.abs(n)>=100 ? n/1000 : n;
+}
+const fmtKW = v => v==null?'—':esNum(v,2)+' kW';
+const fmtTs = ts => { if(!ts) return '—';
+  const d = typeof ts==='number' ? new Date(ts<1e12?ts*1000:ts) : new Date(ts);
+  return isNaN(d.getTime())?'—':d.toLocaleString('es',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}); };
+
+let loadTimer=null;
+function showLoad(){ if(cfg.demo==='1') return; $('loadOverlay').hidden=false;
+  clearTimeout(loadTimer); loadTimer=setTimeout(hideLoad,20000); }
+function hideLoad(){ $('loadOverlay').hidden=true; clearTimeout(loadTimer); }
+
+/* ===== Meteo ===== */
+const wmoText = c => {
+  if(c==null) return '—';
+  if(c===0) return 'Despejado'; if(c===1) return 'Mayormente despejado';
+  if(c===2) return 'Parcialmente nublado'; if(c===3) return 'Nublado';
+  if(c===45||c===48) return 'Niebla';
+  if(c>=51&&c<=57) return 'Llovizna'; if(c>=61&&c<=67) return 'Lluvia';
+  if(c>=71&&c<=77) return 'Nieve'; if(c>=80&&c<=82) return 'Chubascos';
+  if(c>=95) return 'Tormenta'; return '—';
+};
+const wmoIcon = c => { c=+c;
+  if(c===0)return'☀️'; if(c===1)return'🌤️'; if(c===2)return'⛅'; if(c===3)return'☁️';
+  if(c===45||c===48)return'🌫️'; if(c>=51&&c<=57)return'🌦️'; if(c>=61&&c<=67)return'🌧️';
+  if(c>=71&&c<=77)return'❄️'; if(c>=80&&c<=82)return'🌧️'; if(c>=95)return'⛈️'; return'🌡️'; };
+
+async function ensureGeo(){
+  const city=(cfg.city||'').trim();
+  if(cfg.geo && (!city || cfg.geo.city===city)) return true;
+  if(!city) return !!cfg.geo;
+  try{
+    const g = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=es').then(r=>r.json());
+    const r0 = g.results && g.results[0];
+    if(!r0){ log('⚠️ Ciudad no encontrada: '+city); return !!cfg.geo; }
+    cfg.geo={city,lat:r0.latitude,lon:r0.longitude}; save(); return true;
+  }catch(e){ log('Meteo geo: '+e.message); return !!cfg.geo; }
+}
+async function loadWeather(){
+  if(!await ensureGeo() || !cfg.geo) return;
+  try{
+    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1`).then(r=>r.json());
+    const t=w.current?.temperature_2m, code=w.current?.weather_code;
+    const sr=(w.daily?.sunrise?.[0]||'').slice(11,16), ss=(w.daily?.sunset?.[0]||'').slice(11,16);
+    $('wxCity').textContent = '📍 '+(cfg.geo.city||cfg.city||'METEO').toUpperCase();
+    $('wxNow').textContent = `🌡 ${esNum(t,1)}°C · ${wmoText(code)}`;
+    $('wxSun').textContent = `🌅 ${sr||'—'} · 🌇 ${ss||'—'}`;
+  }catch(e){ log('Meteo: '+e.message); }
+}
+$('btnForecast').onclick = async () => {
+  $('fcDlg').showModal();
+  $('fcBody').innerHTML='<p class="hint">Cargando previsión…</p>';
+  try{
+    if(!await ensureGeo() || !cfg.geo) throw new Error('Configura primero la ciudad o pulsa 📍 Obtener ubicación.');
+    $('fcCity').textContent = cfg.geo.city||'';
+    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=4`).then(r=>r.json());
+    const d=w.daily; let html='<div class="fc-grid">';
+    for(let i=1;i<=3;i++){
+      const date=new Date(d.time[i]+'T12:00:00');
+      const name=date.toLocaleDateString('es',{weekday:'long',day:'2-digit',month:'2-digit'});
+      html+=`<div class="fc-day">
+        <div class="d">${name}</div>
+        <div class="ico">${wmoIcon(d.weather_code[i])}</div>
+        <div class="desc">${wmoText(d.weather_code[i])}</div>
+        <div class="temps">${esNum(d.temperature_2m_max[i],0)}° <small>/ ${esNum(d.temperature_2m_min[i],0)}°</small></div>
+        <div class="extra">💧 ${esNum(d.precipitation_sum[i],1)} mm · ${d.precipitation_probability_max[i]??'—'}%<br>🌅 ${(d.sunrise[i]||'').slice(11,16)} · 🌇 ${(d.sunset[i]||'').slice(11,16)}</div>
+      </div>`;
+    }
+    $('fcBody').innerHTML=html+'</div>';
+  }catch(e){ $('fcBody').innerHTML='<p class="hint">⚠️ '+e.message+'</p>'; }
+};
+$('btnCloseFc').onclick=()=>$('fcDlg').close();
+
+$('btnGeo').onclick = () => {
+  if(!navigator.geolocation){ log('⚠️ Este navegador no soporta geolocalización.'); return; }
+  const b=$('btnGeo'); b.textContent='📍 Obteniendo…';
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const lat=pos.coords.latitude, lon=pos.coords.longitude;
+    const city = await reverseCity(lat,lon);
+    if(city){ $('cfgCity').value=city; cfg.city=city; }
+    cfg.geo={city:city||'mi ubicación',lat,lon}; save();
+    log('📍 Ubicación obtenida: '+(city||`${lat.toFixed(3)}, ${lon.toFixed(3)}`));
+    loadWeather();
+    b.textContent='📍 Obtener ubicación';
+  }, err=>{
+    log('📍 No se pudo obtener la ubicación: '+({1:'permiso denegado',2:'no disponible',3:'tiempo agotado'}[err.code]||err.message));
+    b.textContent='📍 Obtener ubicación';
+  }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
+};
+async function reverseCity(lat,lon){
+  try{
+    const g = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`).then(r=>r.json());
+    const c = g.city || g.locality || g.principalSubdivision || '';
+    if(c) return c;
+  }catch(e){}
+  try{
+    const n = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es`).then(r=>r.json());
+    const a = n.address || {};
+    return a.city || a.town || a.village || a.municipality || a.county || '';
+  }catch(e){ return ''; }
+}
+
+/* ===== API Livoltek ===== */
+function normalizeKey(raw){
+  let k = String(raw||'').trim();
+  while(k.endsWith('\\r\\n')) k = k.slice(0,-6).trim();
+  while(k.endsWith('\\n'))   k = k.slice(0,-4).trim();
+  while(k.endsWith('\r\n'))  k = k.slice(0,-2);
+  while(k.endsWith('\n'))    k = k.slice(0,-1);
+  while(k.endsWith('\r'))    k = k.slice(0,-1);
+  k = k.trim(); return k ? k+'\r\n' : k;
+}
+function decodeJwtExp(jwt){
+  try{ const p=jwt.split('.')[1]; const pad=p+'='.repeat((4-p.length%4)%4);
+    return JSON.parse(atob(pad)).exp || null; }catch(e){ return null; }
+}
+async function doLogin(){
+  if(!cfg.secuid || !cfg.key) throw new Error('Faltan Security ID y/o API Key (portal → My Profile → Secure ID).');
+  log('🔐 Login en '+BASE()+'…');
+  const r = await fetch(BASE()+'/hess/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({secuid:cfg.secuid.trim(),key:normalizeKey(cfg.key)})});
+  const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
+  log('login → '+r.status+' '+raw.slice(0,200));
+  if(!j || !j.data) throw new Error('Respuesta de login inválida.');
+  let token = j.data;
+  if(typeof token==='object' && token.data && typeof token.data==='string') token = token.data;
+  if(typeof token!=='string') throw new Error('No se encontró JWT en data.');
+  cfg.authToken = token; cfg.tokenExp = decodeJwtExp(token) || (Math.floor(Date.now()/1000)+1800); save();
+  log('✅ JWT obtenido.');
+}
+async function ensureAuth(){ if(!cfg.authToken || !cfg.tokenExp || cfg.tokenExp < Date.now()/1000+60) await doLogin(); }
+async function apiGet(path, retry=true){
+  await ensureAuth();
+  if(!cfg.userToken) throw new Error('Falta el token de usuario.');
+  const sep = path.includes('?')?'&':'?';
+  const url = BASE()+path+sep+'userToken='+encodeURIComponent(cfg.userToken)+'&userType='+(cfg.userType||'0');
+  const r = await fetch(url,{headers:{'Authorization':cfg.authToken,'Accept':'application/json'}});
+  const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
+  log('GET '+path+' → '+r.status+'\n'+raw.slice(0,280));
+  if(!r.ok) throw new Error('HTTP '+r.status+' en '+path);
+  const code=String(j?.code||''), msgCode=String(j?.msgCode||''), message=String(j?.message||'').toUpperCase();
+  const ok = code==='200' || message==='SUCCESS' || msgCode.toLowerCase().includes('success');
+  if(!ok){
+    const stale = msgCode.includes('expir') || message.includes('PLEASE LOGIN') || (msgCode.includes('invalid')&&msgCode.includes('token'));
+    if(stale && retry){ log('🔄 Renovando JWT…'); cfg.authToken=null; cfg.tokenExp=0; return apiGet(path,false); }
+    throw new Error('API error: '+(j?.message||j?.msgCode||raw.slice(0,100)));
+  }
+  return j?.data;
+}
+async function apiPost(path, bodyObj){
+  await ensureAuth();
+  const url = BASE()+path+'?userToken='+encodeURIComponent(cfg.userToken)+'&userType='+(cfg.userType||'0');
+  const r = await fetch(url,{method:'POST',headers:{'Authorization':cfg.authToken,'Content-Type':'application/json'},body:JSON.stringify(bodyObj)});
+  const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
+  log('POST '+path+' → '+r.status+'\n'+raw.slice(0,280));
+  if(!r.ok) throw new Error('HTTP '+r.status+' en '+path);
+  return j?.data;
+}
+
+async function loadSites(){
+  const data = await apiGet('/hess/api/userSites/list?page=1&size=30');
+  const list = Array.isArray(data)?data:(data&&data.list)||[];
+  const sel=$('cfgSiteId'); sel.innerHTML='';
+  list.forEach(s=>{ const o=document.createElement('option'); o.value=s.powerStationId;
+    o.textContent=s.powerStationName||s.powerStationId; sel.appendChild(o); });
+  if(list.length){
+    if(!cfg.siteId || !list.find(s=>s.powerStationId===cfg.siteId)) cfg.siteId=list[0].powerStationId;
+    sel.value=cfg.siteId;
+    const s=list.find(x=>x.powerStationId===cfg.siteId);
+    cfg.siteName=s?.powerStationName||'';
+    cfg.siteInfo={name:s?.powerStationName,type:s?.powerStationType,country:s?.country,
+                  capacity:s?.pvCapacity,timezone:s?.timezone||s?.timeZone};
+    save(); log('✅ Planta seleccionada: '+cfg.siteName);
+    showSiteName();
+  } else log('⚠️ Sin plantas.');
+  return list;
+}
+function showSiteName(){ if(cfg.siteName) $('siteName').textContent='🏭 '+cfg.siteName; }
+
+async function ensureDevice(){
+  if(cfg.devId) return {id:cfg.devId, sn:cfg.devSn};
+  const data = await apiGet('/hess/api/device/'+cfg.siteId+'/list?page=1&size=20');
+  const list = Array.isArray(data)?data:(data&&data.list)||[];
+  if(!list.length) return null;
+  cfg.devId=list[0].id; cfg.devSn=list[0].inverterSn; save();
+  return {id:cfg.devId, sn:cfg.devSn};
+}
+function groupByDay(entries){
+  const by={};
+  (entries||[]).forEach(e=>{
+    const t=e.time??e.ts??e.timestamp; const v=num(e.value);
+    if(t==null||v==null) return;
+    const ms=Number(t)<1e12?Number(t)*1000:Number(t);
+    const k=dayKey(new Date(ms));
+    by[k]=(by[k]||0)+v;
+  });
+  return by;
+}
+async function loadExtra(){
+  const ex={days:null,todayPv:null,lifetime:null};
+  try{
+    const dev=await ensureDevice();
+    if(dev){
+      const re=await apiGet('/hess/api/device/'+dev.id+'/realElectricity').catch(()=>null);
+      if(re) ex.lifetime=num(re.pvProduceElectric);
+    }
+    const now=Date.now();
+    let cache=JSON.parse(localStorage.getItem('pvReportCache')||'null');
+    if(!(cache && now-cache.ts<2700000) && dev){
+      const f=d=>d.toISOString().slice(0,10);
+      const data=await apiPost('/hess/api/sample/energy',{id:String(dev.id),
+        startTime:f(new Date(now-6*864e5))+' 00:00:00', endTime:f(new Date())+' 23:59:59'}).catch(()=>null);
+      if(data && typeof data==='object'){
+        cache={ts:now,data:{pvBy:groupByDay(data.pvYield),loadBy:groupByDay(data.loadConsumption)}};
+        localStorage.setItem('pvReportCache',JSON.stringify(cache));
+        log('ℹ️ Informe diario del inversor recibido.');
+      }
+    }
+    if(cache&&cache.data){
+      const pvBy=cache.data.pvBy||{};
+      const keys=Object.keys(pvBy).sort();
+      if(keys.length) ex.days=keys.map(k=>({label:k.slice(8,10)+'/'+k.slice(5,7), v:+(pvBy[k]||0).toFixed(2)}));
+      ex.todayPv = pvBy[dayKey()]!=null ? pvBy[dayKey()] : null;
+    }
+  }catch(e){ log('ℹ️ Extra: '+e.message); }
+  return ex;
+}
+
+function parseEss(e){
+  if(!e || typeof e!=='object') return {};
+  const types = parseMaybeJson(e.batteryTypeList);
+  const firstType = Array.isArray(types)&&types.length ? types[0] : null;
+  const hm = parseMaybeJson(e.historyMap);
+  let charge=null, discharge=null, voltage=null, day='';
+  if(hm && typeof hm==='object'){
+    const keys = Object.keys(hm).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+    if(keys.length){
+      const arr = hm[String(keys[keys-1])] || [];
+      let c=0,d=0;
+      arr.forEach(it=>{ c+=num(it.charge)||0; d+=num(it.discharge)||0;
+        if(num(it.energyVolage)!=null) voltage=num(it.energyVolage); });
+      charge=c; discharge=d;
+      day=new Date(keys[keys-1]).toLocaleDateString('es',{day:'2-digit',month:'2-digit'});
+    }
+  }
+  return { soc:num(e.currentSoc), cycles:e.cycleCount, cap:e.bmscapacity,
+           sn:firstType?.deviceSn||e.batterySn||null, charge, discharge, voltage, day };
+}
+
+async function fetchReal(){
+  if(!cfg.siteId) await loadSites();
+  const [pf,ov,ess] = await Promise.all([
+    apiGet('/hess/api/site/'+cfg.siteId+'/curPowerflow').catch(e=>{log('curPowerflow: '+e.message);return null;}),
+    apiGet('/hess/api/site/'+cfg.siteId+'/overview').catch(e=>{log('overview: '+e.message);return null;}),
+    apiGet('/hess/api/site/'+cfg.siteId+'/ESS').catch(e=>{log('ESS: '+e.message);return null;})
+  ]);
+  const p=pf||{}, o=ov||{};
+  let grid=toKw(p.powerGridPower);
+  const gs=String(p.powerGridStatus||'').toLowerCase();
+  let gridImport=null;
+  if(/import|buy|consum|take/.test(gs)) gridImport=grid>0; else if(/export|sell|feed/.test(gs)) gridImport=grid<0;
+  if(cfg.flipGrid && grid!=null) gridImport = gridImport==null ? true : !gridImport;
+
+  const batRaw = toKw(p.energyPower);
+  const bs=String(p.energyStatus||'').toLowerCase();
+  let bat = batRaw;
+  if(bat!=null){
+    if(/dis/.test(bs))      bat = -Math.abs(batRaw);
+    else if(/cha/.test(bs)) bat =  Math.abs(batRaw);
+    if(cfg.flipBat) bat = -bat;
+  }
+
+  const pv = toKw(p.pvPower) ?? toKw(o.currentPower);
+  return {
+    pvPower:pv, housePower:toKw(p.loadPower),
+    gridPower: grid==null?null:(gridImport?-Math.abs(grid):Math.abs(grid)),
+    batteryPower: bat,
+    batterySoc: num(p.energySoc) ?? num((ess||{}).currentSoc),
+    todayEnergy: num(o.eoutDaily), monthEnergy: num(o.eoutMonth),
+    yearEnergy: num(o.eoutCurrentYear),
+    totalEnergy: num(pick(o,['eTotalToGrid','etotalToGrid','eTotaltoGrid','totalEnergy'])),
+    currentPower: num(o.currentPower),
+    onlineDevices: o.onlineDevice,
+    timestamp: p.timestamp || o.updateTime,
+    statuses:{ pv:p.pvStatus, grid:p.powerGridStatus, load:p.loadStatus, battery:p.energyStatus },
+    ess: parseEss(ess)
+  };
+}
+
+/* ===== Estimación local ===== */
+function trackEnergy(pvKw){
+  if(pvKw==null) return;
+  const now=Date.now(); const k=dayKey();
+  if(energyTrack.day!==k){
+    if(energyTrack.day && energyTrack.today>0) energyTrack.hist[energyTrack.day]=+energyTrack.today.toFixed(3);
+    const ks=Object.keys(energyTrack.hist).sort();
+    while(ks.length>7) delete energyTrack.hist[ks.shift()];
+    energyTrack.day=k; energyTrack.today=0; energyTrack.lastTs=null;
+  }
+  if(energyTrack.lastTs){
+    const dtH=(now-energyTrack.lastTs)/3600000;
+    if(dtH>0 && dtH<=0.2) energyTrack.today+=pvKw*dtH;
+  }
+  energyTrack.lastTs=now;
+  localStorage.setItem('pvEnergyTrack',JSON.stringify(energyTrack));
+}
+function estSums(){
+  const mK=dayKey().slice(0,7), yK=dayKey().slice(0,4);
+  let month=0,year=0,total=0;
+  for(const [k,v] of Object.entries(energyTrack.hist)){ total+=v;
+    if(k.startsWith(mK)) month+=v; if(k.startsWith(yK)) year+=v; }
+  return {month:month+energyTrack.today, year:year+energyTrack.today, total:total+energyTrack.today};
+}
+function buildLocalDays(){
+  const days=Object.keys(energyTrack.hist).sort().slice(-6)
+    .map(k=>({label:k.slice(8,10)+'/'+k.slice(5,7), v:+(energyTrack.hist[k]||0).toFixed(2)}));
+  days.push({label:dayKey().slice(8,10)+'/'+dayKey().slice(5,7), v:+energyTrack.today.toFixed(2)});
+  return days;
+}
+
+async function loadHistory(ex){
+  if(ex&&ex.days&&ex.days.some(d=>d.v>0)){
+    lastDays=ex.days; drawChart(lastDays);
+    $('chartNote').textContent='Informe diario del inversor (últimos 7 días).'; return;
+  }
+  try{
+    const data = await apiGet('/hess/api/site/'+cfg.siteId+'/reissueSolarEnergy');
+    const arr = Array.isArray(data)?data:[];
+    const byDay={};
+    arr.forEach(it=>{ const k=new Date(it.ts).toLocaleDateString('es',{day:'2-digit',month:'2-digit'});
+      byDay[k]=(byDay[k]||0)+(num(it.powerGeneration)||0); });
+    const days=Object.entries(byDay).map(([label,v])=>({label,v:+v.toFixed(2)}));
+    if(days.length && days.some(d=>d.v>0)){ lastDays=days; drawChart(days); $('chartNote').textContent=''; return; }
+  }catch(e){}
+  const loc=buildLocalDays();
+  if(loc.some(d=>d.v>0)){ lastDays=loc; drawChart(loc);
+    $('chartNote').textContent='Estimación local integrada por este panel (el cloud aún no registra datos).'; return; }
+  if(lastDays) drawChart(lastDays);
+  $('chartNote').textContent='Aún sin datos de generación diaria.';
+}
+
+function demoData(){
+  const h=new Date().getHours()+new Date().getMinutes()/60;
+  const sun=Math.max(0,Math.sin((h-6.5)/13*Math.PI));
+  const pv=+(sun*4.237*(0.9+Math.random()*0.2)).toFixed(3);
+  const house=+(0.357+Math.random()*0.812).toFixed(3);
+  const bat=+Math.min(Math.max(pv-house,-1.5),2).toFixed(3);
+  simSoc=Math.min(100,Math.max(5,simSoc+bat*0.12)); simToday+=pv*REFRESH_MS/3600000;
+  return {pvPower:pv,housePower:house,batteryPower:bat,batterySoc:+simSoc.toFixed(2),
+    gridPower:+(pv-house-bat).toFixed(3),
+    todayEnergy:+simToday.toFixed(3),monthEnergy:+(simToday*14.2).toFixed(3),
+    yearEnergy:+(simToday*178.6).toFixed(3),totalEnergy:simTotal,currentPower:pv,
+    onlineDevices:'1/1',timestamp:Date.now(),
+    statuses:{pv:null,grid:null,load:'consuming',battery:null},
+    ess:{soc:+simSoc.toFixed(2),cycles:'247',cap:'100',sn:'BAT-DEMO-001',charge:3.2,discharge:1.8,voltage:51.2,day:'hoy'}};
+}
+function demoHistory(){ const d=[]; for(let i=3;i>=0;i--){ const dt=new Date(Date.now()-i*864e5);
+  d.push({label:dt.toLocaleDateString('es',{day:'2-digit',month:'2-digit'}),v:+(12+Math.random()*12).toFixed(2)});} return d; }
+
+/* ===== Geometría de flujos ===== */
+const GEO={
+  flowPv:   {a:[120,142], b:[210,202], c1:[172,150], c2:[200,174]},
+  flowBat:  {a:[270,202], b:[360,142], c1:[280,174], c2:[308,150]},
+  flowGrid: {a:[210,266], b:[120,326], c1:[200,294], c2:[172,318]},
+  flowHouse:{a:[270,266], b:[360,326], c1:[280,294], c2:[308,318]}
+};
+function applyFlow(id,p,reverse){
+  const el=$(id), g=GEO[id];
+  const S=reverse?g.b:g.a, E=reverse?g.a:g.b, C1=reverse?g.c2:g.c1, C2=reverse?g.c1:g.c2;
+  el.setAttribute('d',`M${S[0]},${S[1]} C${C1[0]},${C1[1]} ${C2[0]},${C2[1]} ${E[0]},${E[1]}`);
+  el.style.animationDuration=Math.max(0.35,1.6-Math.min(Math.abs(p),5)/4)+'s';
+  el.classList.remove('idle');
+}
+function setLed(el,cls){ el.className='led '+cls; }
+const fmtStatus = s => { if(!s) return '—';
+  const m={normal:'Normal',online:'Online',offline:'Offline',fault:'Fallo',charging:'Cargando',
+    discharging:'Descargando',standby:'Standby',import:'Importando',export:'Exportando',idle:'Inactivo',
+    on:'Activo',generating:'Generando',consuming:'Consumiendo'};
+  return m[String(s).toLowerCase()]||String(s); };
+
+function plantCapacity(){
+  if(cfg.demo==='1') return 4.24;
+  const c = num(cfg.siteInfo?.capacity);
+  return c>0 ? c : null;
+}
+
+function apply(d, ex){
+  ex = ex || {};
+
+  /* --- PV --- */
+  const pvOn=(d.pvPower??0)>0.02;
+  const fpv=$('flowPv');
+  fpv.classList.toggle('on',pvOn);
+  if(pvOn){ applyFlow('flowPv',d.pvPower,false); $('txtPv').textContent=fmtKW(d.pvPower); $('txtPv').setAttribute('fill','#34d399'); }
+  else{ fpv.classList.add('idle'); $('txtPv').textContent='—'; $('txtPv').setAttribute('fill','#8fa3bf'); }
+  const cap=plantCapacity();
+  const pct=(cap && d.pvPower!=null) ? Math.max(0, d.pvPower/cap*100) : null;
+  $('txtPvPct').textContent = pct==null ? '—' : esNum(Math.min(pct,999),1)+'%';
+  $('txtPvPct').setAttribute('fill', pvOn ? '#34d399' : '#8fa3bf');
+
+  /* --- Casa --- */
+  const houseOn=(d.housePower??0)>=0.02;
+  if(houseOn){ applyFlow('flowHouse',d.housePower,false); $('txtHouse').textContent=fmtKW(d.housePower); }
+  else{ $('flowHouse').classList.add('idle'); $('txtHouse').textContent='—'; }
+  $('txtHouse').setAttribute('fill','#34d399');
+
+  /* --- Batería --- */
+  const socN=d.batterySoc;
+  const charging=(d.batteryPower??0)>0.02;
+  const discharging=(d.batteryPower??0)<-0.02;
+  const low = socN!=null && socN<=10;
+  const batAbs=d.batteryPower==null?null:Math.abs(d.batteryPower);
+  const batRev=(d.batteryPower??0)<0;
+  const batMoving=batAbs!=null&&batAbs>=0.02;
+  const fb=$('flowBat');
+  fb.classList.remove('charge','discharge','low');
+  if(low){
+    fb.classList.add('low');
+    if(batMoving) applyFlow('flowBat',batAbs,batRev); else fb.classList.add('idle');
+    $('txtBat').textContent='BATERIA BAJA'; $('txtBat').setAttribute('fill','#fb7185');
+  }
+  else if(charging){
+    fb.classList.add('charge'); applyFlow('flowBat',batAbs,false);
+    $('txtBat').textContent=fmtKW(batAbs); $('txtBat').setAttribute('fill','#34d399');
+  }
+  else if(discharging){
+    fb.classList.add('discharge'); applyFlow('flowBat',batAbs,true);
+    $('txtBat').textContent=fmtKW(batAbs); $('txtBat').setAttribute('fill','#fbbf24');
+  }
+  else{
+    fb.classList.add('idle'); $('txtBat').textContent='—'; $('txtBat').setAttribute('fill','#8fa3bf');
+  }
+
+  /* --- Red --- */
+  const gridZero = d.gridPower==null || Math.abs(d.gridPower)<0.02;
+  const gridImportNow = !gridZero && (d.gridPower??0)<0;
+  const fg=$('flowGrid');
+  fg.classList.toggle('import', gridImportNow);
+  if(gridZero){
+    fg.classList.add('idle');
+    $('gridX').style.display='';
+    $('txtGrid').textContent='Desconectado'; $('txtGrid').setAttribute('fill','#8fa3bf');
+  }else{
+    $('gridX').style.display='none';
+    applyFlow('flowGrid',Math.abs(d.gridPower),gridImportNow);
+    $('txtGrid').textContent=fmtKW(Math.abs(d.gridPower));
+    $('txtGrid').setAttribute('fill',gridImportNow?'#fbbf24':'#34d399');
+  }
+
+  const g=$('valGrid');
+  if(gridZero){ g.textContent='Desconectado de la red'; g.className='v c-mut'; }
+  else{ g.textContent=(d.gridPower>0?'Export ':'Import ')+fmtKW(Math.abs(d.gridPower));
+        g.className='v '+((d.gridPower??0)>=0?'c-eme':'c-amber'); }
+
+  $('valPv').textContent=fmtKW(d.pvPower);
+  $('valHouse').textContent=fmtKW(d.housePower);
+
+  const vb=$('valBat');
+  if(charging){ vb.textContent='Cargando a '+fmtKW(d.batteryPower); vb.className='v c-eme'; }
+  else if(discharging){ vb.textContent='Descargando a '+fmtKW(Math.abs(d.batteryPower)); vb.className='v c-amber'; }
+  else{
+    if(socN!=null && socN<99){ vb.textContent='En reposo ('+esNum(socN,1)+'%)'; vb.className='v c-mut'; }
+    else { vb.textContent='Batería al 100%'; vb.className='v c-eme'; }
+  }
+
+  $('valSoc').textContent=socN==null?'—':esNum(socN,1)+'%';
+  const bf=$('batFill');
+  if(socN!=null){ const hh=Math.max(2,38*Math.min(100,socN)/100);
+    bf.setAttribute('height',hh); bf.setAttribute('y',87+(38-hh));
+    bf.setAttribute('fill', socN<10 ? '#fb7185' : socN<30 ? '#fbbf24' : '#34d399');
+  } else bf.setAttribute('height',0);
+  $('txtSoc').textContent=socN==null?'—':esNum(socN,1)+'%';
+  $('txtSoc').setAttribute('fill', low ? '#fb7185' : '#a78bfa');
+
+  /* Energía acumulada */
+  if(cfg.demo!=='1') trackEnergy(d.pvPower);
+  let usedEst=false;
+
+  let todayV=null;
+  if((ex.todayPv??0)>0) todayV=ex.todayPv;
+  else if((d.todayEnergy??0)>0) todayV=d.todayEnergy;
+  else if(energyTrack.today>0.0005){ todayV=energyTrack.today; usedEst=true; }
+  else todayV=d.todayEnergy??0;
+
+  const mPrefix=dayKey().slice(0,7);
+  let monthV=null;
+  if((d.monthEnergy??0)>0) monthV=d.monthEnergy;
+  else{
+    if(ex.days && ex.days.length){ let sum=0;
+      ex.days.forEach(d2=>{ const mm=d2.label.slice(3,5); if(mm===mPrefix.slice(5,7)) sum+=d2.v; });
+      if(sum>0) monthV=sum; }
+    if(monthV==null && Object.keys(energyTrack.hist).length){
+      let sum=0; for(const [k,v] of Object.entries(energyTrack.hist)) if(k.startsWith(mPrefix)) sum+=v;
+      sum+=energyTrack.today; if(sum>0.0005){ monthV=sum; usedEst=true; } }
+    if(monthV==null) monthV=d.monthEnergy??0;
+  }
+
+  let yearV=null;
+  if((d.yearEnergy??0)>0) yearV=d.yearEnergy;
+  else{
+    if(ex.days && ex.days.length){ let sum=0; ex.days.forEach(d2=>sum+=d2.v); if(sum>0) yearV=sum; }
+    if(yearV==null){ let sum=0; for(const v of Object.values(energyTrack.hist)) sum+=v; sum+=energyTrack.today;
+      if(sum>0.0005){ yearV=sum; usedEst=true; } }
+    if(yearV==null) yearV=d.yearEnergy??0;
+  }
+
+  let totalV=null;
+  if((ex.lifetime??0)>0) totalV=ex.lifetime;
+  else if((d.totalEnergy??0)>0) totalV=d.totalEnergy;
+  else{ let sum=0; for(const v of Object.values(energyTrack.hist)) sum+=v; sum+=energyTrack.today;
+    if(sum>0.0005){ totalV=sum; usedEst=true; } else totalV=d.totalEnergy??0; }
+
+  $('valToday').innerHTML=esNum(todayV,3)+'<small> kWh</small>';
+  $('valMonth').innerHTML=esNum(monthV,3)+'<small> kWh</small>';
+  $('valYear').innerHTML=esNum(yearV,3)+'<small> kWh</small>';
+  $('valTotal').innerHTML=esNum(totalV,3)+'<small> kWh</small>';
+  const co2=totalV*0.4;
+  $('valCo2').innerHTML=co2>=1000?esNum(co2/1000,3)+'<small> t</small>':esNum(co2,2)+'<small> kg</small>';
+  $('accNote').textContent = usedEst ? 'ℹ️ El cloud de Livoltek aún no registra generación: parte de los valores provienen del informe diario del inversor o de la estimación local de este panel.' : '';
+  $('valLastTs').textContent=fmtTs(d.timestamp);
+  $('invScreenTxt').textContent=fmtKW(d.pvPower);
+
+  const st=d.statuses||{};
+  const pvGen=(d.pvPower??0)>0.05;
+  $('stPv').textContent = pvGen ? 'Generando' : fmtStatus(st.pv);
+  $('stPv').className = 'val '+(pvGen?'val-ok':'');
+  setLed($('ledPv'), pvGen?'led-ok':(st.pv?'led-ok':'led-off'));
+  $('stGrid').textContent = gridZero ? 'Desconectado' : fmtStatus(st.grid);
+  $('stGrid').className = 'val '+(gridZero?'val-mut':'');
+  setLed($('ledGrid'), gridZero?'led-off':'led-ok');
+  const consuming=/consum/.test(String(st.load).toLowerCase()) || (d.housePower??0)>0.05;
+  $('stLoad').textContent = consuming ? 'Consumiendo' : fmtStatus(st.load);
+  $('stLoad').className = 'val '+(consuming?'val-ok':'');
+  setLed($('ledLoad'), consuming?'led-ok':'led-off');
+  let batTxt, batCls='', batLed='led-off';
+  if(low){ batTxt='Bajo ('+esNum(socN,1)+'%)'; batCls='val-err'; batLed='led-err'; }
+  else if(charging){ batTxt='Cargando'; batCls='val-ok'; batLed='led-ok'; }
+  else if(discharging){ batTxt='Descargando'; batCls='val-warn'; batLed='led-warn'; }
+  else { batTxt='Sin uso de baterías'; batCls='val-mut'; }
+  $('stBat').textContent=batTxt; $('stBat').className='val '+batCls;
+  setLed($('ledBat'),batLed);
+  $('stSite').textContent=d.onlineDevices||'—';
+  setLed($('ledSite'), d.onlineDevices?'led-ok':'led-off');
+
+  const info=cfg.siteInfo||{};
+  $('piName').textContent=info.name||cfg.siteName||'—';
+  $('piId').textContent=cfg.siteId||'—';
+  $('piType').textContent=info.type||'—';
+  $('piCountry').textContent=info.country||'—';
+  $('piCapacity').textContent=info.capacity?esNum(info.capacity,2)+' kWp':'—';
+  $('piTz').textContent=info.timezone||'—';
+  $('piOnline').textContent=d.onlineDevices||'—';
+  $('piPower').textContent=d.currentPower==null?'—':esNum(d.currentPower,2)+' kW';
+
+  const ess=d.ess||{};
+  $('bdSoc').textContent=socN!=null?esNum(socN,1)+'%':'—';
+  $('bdStatus').textContent=batTxt; $('bdStatus').className='val '+batCls;
+  $('bdCycles').textContent=ess.cycles||'—';
+  $('bdCap').textContent=ess.cap!=null?String(ess.cap):'—';
+  $('bdSn').textContent=ess.sn||'—';
+  $('bdVolt').textContent=ess.voltage!=null?esNum(ess.voltage,1)+' V':'—';
+  $('bdChargeDay').textContent=ess.day||'';
+  $('bdCharge').textContent=ess.charge!=null?esNum(ess.charge,2)+' kWh':'—';
+  $('bdDischarge').textContent=ess.discharge!=null?esNum(ess.discharge,2)+' kWh':'—';
+
+  $('invLed').setAttribute('fill', (d.pvPower!=null)?'#34d399':'#64748b');
+  const b=$('statusBadge'); b.textContent=cfg.demo==='1'?'DEMO':(d.pvPower!=null?'En línea':'Sin datos');
+  b.className='badge '+(cfg.demo==='1'?'demo':(d.pvPower!=null?'on':'off'));
+  $('lastUpd').textContent='Actualizado '+new Date().toLocaleTimeString();
+}
+
+function drawChart(days){
+  const c=$('chartCanvas'),ctx=c.getContext('2d');
+  const cw=Math.max(c.clientWidth,200);
+  c.width=cw*2; c.height=360; ctx.setTransform(2,0,0,2,0,0);
+  const W=cw,H=180,pad=24,max=Math.max(...days.map(d=>Number(d.v)||0),1);
+  ctx.clearRect(0,0,W,H);
+  const bw=(W-pad*2)/days.length*0.6;
+  days.forEach((d,i)=>{
+    const v=Number(d.v)||0;
+    const x=pad+i*(W-pad*2)/days.length+((W-pad*2)/days.length-bw)/2, h=(H-40)*v/max;
+    const gr=ctx.createLinearGradient(0,H-20-h,0,H-20); gr.addColorStop(0,'#fbbf24'); gr.addColorStop(1,'#b45309');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.roundRect(x,H-20-h,Math.max(bw,2),Math.max(h,1),4); ctx.fill();
+    ctx.fillStyle='#8fa3bf'; ctx.font='10px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText(d.label,x+bw/2,H-6); ctx.fillStyle='#e6edf7'; ctx.fillText(v.toFixed(2).replace('.',','),x+bw/2,H-26-h);
+  });
+}
+let rzT=null;
+window.addEventListener('resize',()=>{ clearTimeout(rzT); rzT=setTimeout(()=>{ if(lastDays) drawChart(lastDays); },200); });
+
+async function refresh(withOverlay=false){
+  if(withOverlay) showLoad();
+  $('btnRefresh').classList.add('spin');
+  loadWeather();
+  try{
+    if(cfg.demo==='1'){
+      apply(demoData(),null);
+      lastDays=demoHistory(); drawChart(lastDays); $('chartNote').textContent='Datos simulados.';
+    }else{
+      const ex=await loadExtra();
+      apply(await fetchReal(), ex);
+      await loadHistory(ex);
+    }
+  }
+  catch(e){ log('❌ '+e.message+(e instanceof TypeError?' (¿CORS?)':''));
+    const b=$('statusBadge'); b.textContent='Error'; b.className='badge off'; }
+  finally{ $('btnRefresh').classList.remove('spin'); countdown=REFRESH_MS/1000;
+    $('nextIn').textContent='Próxima actualización: '+fmtCount(countdown);
+    if(withOverlay) hideLoad(); }
+}
+setInterval(()=>{ countdown--; $('nextIn').textContent='Próxima actualización: '+fmtCount(countdown);
+  if(countdown<=0) refresh(false); },1000);
+$('btnRefresh').onclick=()=>refresh(true);
+
+const logDlg=$('logDlg');
+$('btnLog').onclick=()=>{ $('logBox').textContent=LOG||'Listo.'; logDlg.showModal(); };
+$('btnCloseLog').onclick=()=>logDlg.close();
+$('btnClearLog').onclick=()=>{ LOG=''; $('logBox').textContent='Listo.'; log('Registro limpiado.'); };
+$('btnCopyLog').onclick=()=>{
+  const txt=LOG||'';
+  const ok=()=>{ const b=$('btnCopyLog'); b.textContent='✅ ¡Copiado!';
+    setTimeout(()=>b.textContent='📄 Copiar registro',1500); };
+  const fallback=()=>{ const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){} ta.remove(); ok(); };
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(ok).catch(fallback); }
+  else fallback();
+};
+
+const dlg=$('dlg');
+function loadForm(){
+  $('cfgDemo').value=cfg.demo;
+  $('cfgUserToken').value=cfg.userToken||''; $('cfgSecuid').value=cfg.secuid||'';
+  $('cfgKey').value=cfg.key||''; $('cfgUserType').value=cfg.userType||'0';
+  $('cfgUnit').value=cfg.unit||'auto'; $('cfgFlipGrid').checked=!!cfg.flipGrid;
+  $('cfgFlipBat').checked=!!cfg.flipBat;
+  $('cfgCity').value=cfg.city||'';
+  if(cfg.siteId){ const o=document.createElement('option'); o.value=cfg.siteId;
+    o.textContent=cfg.siteName||cfg.siteId; $('cfgSiteId').innerHTML='';
+    $('cfgSiteId').appendChild(o); $('cfgSiteId').value=cfg.siteId; }
+}
+$('btnSettings').onclick=()=>{ loadForm(); dlg.showModal(); };
+$('btnClose').onclick=()=>dlg.close();
+$('btnSites').onclick=async()=>{
+  cfg.userToken=$('cfgUserToken').value.trim();
+  cfg.secuid=$('cfgSecuid').value.trim(); cfg.key=$('cfgKey').value; cfg.userType=$('cfgUserType').value;
+  save(); cfg.authToken=null; cfg.tokenExp=0;
+  try{ await loadSites(); }catch(e){ log('❌ '+e.message); }
+};
+$('btnSave').onclick=()=>{
+  cfg.demo=$('cfgDemo').value;
+  cfg.userToken=$('cfgUserToken').value.trim(); cfg.secuid=$('cfgSecuid').value.trim();
+  cfg.key=$('cfgKey').value; cfg.siteId=$('cfgSiteId').value||'';
+  cfg.siteName=$('cfgSiteId').selectedOptions[0]?.textContent||cfg.siteName||'';
+  const newCity=$('cfgCity').value.trim();
+  if(newCity!==cfg.city){ cfg.city=newCity; cfg.geo=null; }
+  cfg.userType=$('cfgUserType').value; cfg.flipGrid=$('cfgFlipGrid').checked;
+  cfg.flipBat=$('cfgFlipBat').checked;
+  cfg.unit=$('cfgUnit').value; cfg.authToken=null; cfg.tokenExp=0;
+  cfg.devId=null; cfg.devSn=null;
+  save(); dlg.close(); showSiteName();
+  log('Guardado. Modo: '+(cfg.demo==='1'?'DEMO':'REAL'));
+  refresh(true);
+};
+
+showSiteName();
+if(!localStorage.getItem('pvDashCfg')) dlg.showModal();
+log('Iniciado. Modo: '+(cfg.demo==='1'?'DEMO':'REAL')+' · servidor EMEA · auto cada 5 min');
+refresh(true);
+</script>
+</body>
+</html>
