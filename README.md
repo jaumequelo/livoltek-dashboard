@@ -3,6 +3,8 @@
 Panel web **autocontenido en un solo `index.html`** (sin dependencias ni build) para monitorizar
 una planta fotovoltaica con inversor **Livoltek** mediante la API oficial del cloud (HESS · servidor EMEA).
 
+🌐 **Demo en vivo:** [https://jaumequelo.github.io/livoltek-dashboard/](https://jaumequelo.github.io/livoltek-dashboard/)
+
 ![HTML](https://img.shields.io/badge/HTML5-single--file-orange) ![API](https://img.shields.io/badge/API-Livoltek%20HESS-blue) ![Meteo](https://img.shields.io/badge/Meteo-Open--Meteo-brightgreen) ![License](https://img.shields.io/badge/Licencia-MIT-green)
 
 ## ✨ Características
@@ -20,21 +22,26 @@ una planta fotovoltaica con inversor **Livoltek** mediante la API oficial del cl
 
 ## 🚀 Uso
 
-1. Descarga/clona el repo y abre `index.html` en el navegador (o publícalo con GitHub Pages).
-2. Pulsa **⚙ Configuración** y elige **Modo Real**.
-3. Obtén tus credenciales en **www.livoltek-portal.com → My Profile**:
+```bash
+git clone https://github.com/jaumequelo/livoltek-dashboard.git
+cd livoltek-dashboard
+# abre index.html en tu navegador
+```
+
+1. Pulsa **⚙ Configuración** y elige **Modo Real**.
+2. Obtén tus credenciales en **www.livoltek-portal.com → My Profile**:
    - **Generate Token** → token de usuario
    - **Secure ID** → `Security ID` (secuid) y `API Key`
-4. Pega los 3 valores, pulsa **🔎 Cargar plantas**, selecciona la tuya y **💾 Guardar y conectar**.
+3. Pega los 3 valores, pulsa **🔎 Cargar plantas**, selecciona la tuya y **💾 Guardar y conectar**.
 
 > Las credenciales se guardan **únicamente en tu navegador** (localStorage).
 > Este proyecto no está afiliado a Livoltek/Hexing.
 
-##  Despliegue con GitHub Pages
+## 🌍 Despliegue con GitHub Pages
 
 `Settings → Pages → Branch: main → Save` → listo en `https://TU_USUARIO.github.io/livoltek-dashboard/`.
 
-##  Contribuir
+## 🤝 Contribuir
 
 Pull requests y issues bienvenidos. Si tu instalación reporta signos de potencia distintos,
 prueba los checkboxes *«Invertir sentido de red/batería»* en Configuración.
