@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b1220">
-<title>Dashboard Fotovoltaica · Livoltek</title>
+<title>Dashboard Fotovoltaica · Livoltek | by jaumequelo.online</title>
 <style>
   :root{--bg:#0b1220;--card:#111a2e;--card2:#0e1626;--txt:#e6edf7;--mut:#8fa3bf;
         --amber:#fbbf24;--sky:#38bdf8;--vio:#a78bfa;--eme:#34d399;--rose:#fb7185;--line:#1e2c47}
@@ -22,7 +22,6 @@
   .badge.demo{color:#fcd34d;border-color:#78350f;background:#451a0355}
   .badge.site{color:#7dd3fc;border-color:#0c4a6e;background:#082f4955;font-weight:600}
   .spacer{flex:1}
-  /* Próxima actualización + Actualizado: siempre en la misma línea */
   .refresh-info{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
   #nextIn{font-size:12px;color:var(--mut)}
   button{background:#1c2b4a;color:var(--txt);border:1px solid var(--line);border-radius:10px;
@@ -32,10 +31,14 @@
   .wrap{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);gap:16px;flex:1}
   .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;padding:16px}
   .card h2{font-size:13px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .wx-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    background:#0d1526;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px}
+  .wx-main{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0}
+  .wx-city{font-size:11px;color:var(--mut);letter-spacing:.08em;font-weight:700}
+  .wx-now{font-size:14px;font-weight:700;color:var(--txt)}
+  .wx-sun{font-size:12px;color:var(--mut)}
   .svg-scroll{width:100%;max-width:560px;margin:0 auto}
   .svg-scroll svg{display:block;width:100%;height:auto}
-  #btnForecast{cursor:pointer}
-  #btnForecast:hover rect{fill:#24375e}
   .flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:9 9;animation:dash .8s linear infinite}
   .flow.idle{opacity:.4;animation-play-state:paused}
   @keyframes dash{to{stroke-dashoffset:-18}}
@@ -118,12 +121,34 @@
   .fc-day .temps small{color:var(--mut);font-weight:400}
   .fc-day .extra{font-size:10px;color:var(--mut);margin-top:6px;line-height:1.6}
   .footer{margin-top:22px;text-align:center;font-size:12px;color:var(--mut);padding:10px 0 2px}
-  .footer-actions{display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .footer-actions{display:flex;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
   .footer-actions button{min-width:160px;padding:11px 16px}
+  .footer-gh{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:12px}
+  .footer-gh a.gh-link{display:inline-flex;align-items:center;justify-content:center;
+    width:42px;height:42px;border-radius:50%;background:#0a1120;border:1px solid var(--line);
+    transition:transform .2s, background .2s}
+  .footer-gh a.gh-link:hover{transform:translateY(-2px);background:#1c2b4a}
+  .footer-gh a.gh-link svg{width:22px;height:22px;fill:var(--txt)}
+  .footer-version{display:inline-block;font-size:11px;font-family:Consolas,monospace;
+    color:var(--mut);background:#0a1120;border:1px solid var(--line);border-radius:99px;
+    padding:3px 12px;cursor:pointer;user-select:none;transition:.15s}
+  .footer-version:hover{color:var(--sky);border-color:var(--sky)}
   .footer a{color:var(--sky);text-decoration:none;font-weight:600}
   .footer a:hover{text-decoration:underline}
   .footer .heart{color:var(--rose);display:inline-block;animation:beat 1.6s ease-in-out infinite}
   @keyframes beat{0%,100%{transform:scale(1)}10%{transform:scale(1.25)}20%{transform:scale(1)}30%{transform:scale(1.15)}40%{transform:scale(1)}}
+  /* Changelog */
+  #changelogDlg{width:min(520px,92vw)}
+  .cl-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:60vh;overflow-y:auto;padding-right:4px}
+  .cl-entry{background:#0a1120;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .cl-entry.current{border-color:var(--sky);box-shadow:0 0 0 1px var(--sky) inset}
+  .cl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+  .cl-ver{font-weight:700;color:var(--txt);font-family:Consolas,monospace;font-size:13px}
+  .cl-date{font-size:11px;color:var(--mut)}
+  .cl-current-tag{font-size:10px;color:var(--sky);background:#082f49;padding:2px 7px;border-radius:99px;border:1px solid #0c4a6e;margin-left:6px}
+  .cl-body{font-size:12px;color:var(--mut);line-height:1.55}
+  .cl-body li{margin:2px 0;padding-left:2px}
+  .cl-body li::marker{color:var(--sky)}
   @media(max-width:980px){ .wrap{grid-template-columns:1fr} body{padding:14px} }
   @media(max-width:760px){
     body{padding:10px}
@@ -146,6 +171,9 @@
     .footer-actions button{flex:1 1 40%;min-width:140px}
     .load-box{padding:22px 24px}
     .load-text{font-size:13px}
+    .wx-bar{flex-direction:column;align-items:stretch}
+    .wx-main{justify-content:space-between;gap:8px}
+    .wx-bar button{width:100%}
   }
   @media(max-width:460px){
     .kpirow{grid-template-columns:1fr 1fr}
@@ -184,8 +212,16 @@
   <div>
     <div class="card">
       <h2>Diagrama del sistema (flujo en vivo)</h2>
+      <div class="wx-bar">
+        <div class="wx-main">
+          <span class="wx-city" id="wxCity">📍 —</span>
+          <span class="wx-now" id="wxNow">🌡 — · —</span>
+          <span class="wx-sun" id="wxSun">🌅 — · 🌇 —</span>
+        </div>
+        <button id="btnForecast">📅 Previsión próximos 3 días</button>
+      </div>
       <div class="svg-scroll">
-      <svg viewBox="0 0 480 460">
+      <svg viewBox="0 0 480 406">
         <defs>
           <marker id="mGray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
           <marker id="mAmber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/></marker>
@@ -195,64 +231,49 @@
           <marker id="mRose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fb7185"/></marker>
           <linearGradient id="gradInv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#42a5f5"/><stop offset="1" stop-color="#1565c0"/></linearGradient>
         </defs>
-
-        <rect x="140" y="6" width="200" height="96" rx="10" fill="#0d1526" stroke="#1e2c47"/>
-        <text id="wxCity" x="152" y="24" class="lbl2" fill="#8fa3bf" style="letter-spacing:.08em">METEO EN DIRECTO</text>
-        <text id="wxNow" x="152" y="44" class="lbl2" fill="#e6edf7">🌡 — · —</text>
-        <text id="wxSun" x="152" y="62" class="lbl2" fill="#8fa3bf">🌅 — · 🌇 —</text>
-        <g id="btnForecast">
-          <rect x="152" y="72" width="176" height="24" rx="12" fill="#1c2b4a" stroke="#1e2c47"/>
-          <text x="240" y="88" text-anchor="middle" class="lbl2" fill="#e6edf7">📅 Previsión próximos 3 días</text>
-        </g>
-
-        <circle cx="88" cy="106" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
-        <rect x="66" y="90" width="44" height="30" rx="2" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
-        <line x1="66" y1="100" x2="110" y2="100" stroke="#f59e0b" stroke-width="1.5"/>
-        <line x1="66" y1="110" x2="110" y2="110" stroke="#f59e0b" stroke-width="1.5"/>
-        <line x1="81" y1="90" x2="81" y2="120" stroke="#f59e0b" stroke-width="1.5"/>
-        <line x1="96" y1="90" x2="96" y2="120" stroke="#f59e0b" stroke-width="1.5"/>
-        <line x1="88" y1="120" x2="88" y2="128" stroke="#f59e0b" stroke-width="2.5"/>
-        <text x="88" y="173" class="sub" text-anchor="middle">Paneles</text>
-        <text id="txtPv" x="88" y="191" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
-        <text id="txtPvPct" x="88" y="207" class="lbl2" text-anchor="middle" fill="#34d399">—</text>
-
-        <circle cx="392" cy="106" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
-        <rect x="378" y="84" width="28" height="44" rx="4" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
-        <rect x="386" y="79" width="12" height="5" rx="2" fill="#e6edf7"/>
-        <rect id="batFill" x="381" y="87" width="22" height="38" rx="2" fill="#34d399" opacity=".9"/>
-        <text x="392" y="173" class="sub" text-anchor="middle">Baterías</text>
-        <text id="txtBat" x="392" y="191" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
-        <text id="txtSoc" x="392" y="207" class="lbl2" text-anchor="middle" fill="#a78bfa">—</text>
-
-        <circle cx="88" cy="362" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <circle cx="88" cy="52" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="66" y="36" width="44" height="30" rx="2" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <line x1="66" y1="46" x2="110" y2="46" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="66" y1="56" x2="110" y2="56" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="81" y1="36" x2="81" y2="66" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="96" y1="36" x2="96" y2="66" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="88" y1="66" x2="88" y2="74" stroke="#f59e0b" stroke-width="2.5"/>
+        <text x="88" y="119" class="sub" text-anchor="middle">Paneles</text>
+        <text id="txtPv" x="88" y="137" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+        <text id="txtPvPct" x="88" y="153" class="lbl2" text-anchor="middle" fill="#34d399">—</text>
+        <circle cx="392" cy="52" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="378" y="30" width="28" height="44" rx="4" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <rect x="386" y="25" width="12" height="5" rx="2" fill="#e6edf7"/>
+        <rect id="batFill" x="381" y="33" width="22" height="38" rx="2" fill="#34d399" opacity=".9"/>
+        <text x="392" y="119" class="sub" text-anchor="middle">Baterías</text>
+        <text id="txtBat" x="392" y="137" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+        <text id="txtSoc" x="392" y="153" class="lbl2" text-anchor="middle" fill="#a78bfa">—</text>
+        <circle cx="88" cy="308" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
         <g stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" fill="none">
-          <path d="M88,340 L74,384 M88,340 L102,384"/>
-          <path d="M78,354 L98,354 M76,366 L100,366 M74,378 L102,378"/>
+          <path d="M88,286 L74,330 M88,286 L102,330"/>
+          <path d="M78,300 L98,300 M76,312 L100,312 M74,324 L102,324"/>
         </g>
-        <text x="88" y="429" class="sub" text-anchor="middle">Red</text>
-        <text id="txtGrid" x="88" y="447" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
-
-        <circle cx="392" cy="362" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
-        <path d="M374,356 L392,340 L410,356" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
-        <rect x="378" y="356" width="28" height="26" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
-        <path d="M394,360 L388,370 L392,370 L390,378 L398,367 L393,367 Z" fill="#38bdf8"/>
-        <text x="392" y="429" class="sub" text-anchor="middle">Casa</text>
-        <text id="txtHouse" x="392" y="447" class="lbl" text-anchor="middle" fill="#34d399">—</text>
-
-        <circle cx="240" cy="234" r="60" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
-        <rect x="219" y="196" width="42" height="64" rx="5" fill="url(#gradInv)" stroke="#0d47a1" stroke-width="1.5"/>
-        <line x1="240" y1="206" x2="240" y2="236" stroke="#7CFC00" stroke-width="3" stroke-linecap="round"/>
-        <circle id="invLed" cx="240" cy="248" r="4" fill="#64748b"/>
-        <text id="invScreenTxt" x="240" y="272" class="lbl2" text-anchor="middle" fill="#7dd3fc">— kW</text>
-        <text x="240" y="308" class="sub" text-anchor="middle" style="font-weight:700" fill="#cbd5e1">INVERSOR</text>
-
-        <path id="flowPv"    class="flow idle" d="M120,142 C172,150 200,174 210,202"/>
-        <path id="flowBat"   class="flow idle" d="M270,202 C280,174 308,150 360,142"/>
-        <path id="flowGrid"  class="flow idle" d="M210,266 C200,294 172,318 120,326"/>
-        <path id="flowHouse" class="flow idle" d="M270,266 C280,294 308,318 360,326"/>
+        <text x="88" y="375" class="sub" text-anchor="middle">Red</text>
+        <text id="txtGrid" x="88" y="393" class="lbl" text-anchor="middle" fill="#8fa3bf">—</text>
+        <circle cx="392" cy="308" r="47" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <path d="M374,302 L392,286 L410,302" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <rect x="378" y="302" width="28" height="26" fill="none" stroke="#e6edf7" stroke-width="2.5"/>
+        <path d="M394,306 L388,316 L392,316 L390,324 L398,313 L393,313 Z" fill="#38bdf8"/>
+        <text x="392" y="375" class="sub" text-anchor="middle">Casa</text>
+        <text id="txtHouse" x="392" y="393" class="lbl" text-anchor="middle" fill="#34d399">—</text>
+        <circle cx="240" cy="180" r="60" fill="#10192b" stroke="#1e2c47" stroke-width="1.5"/>
+        <rect x="219" y="142" width="42" height="64" rx="5" fill="url(#gradInv)" stroke="#0d47a1" stroke-width="1.5"/>
+        <line x1="240" y1="152" x2="240" y2="182" stroke="#7CFC00" stroke-width="3" stroke-linecap="round"/>
+        <circle id="invLed" cx="240" cy="194" r="4" fill="#64748b"/>
+        <text id="invScreenTxt" x="240" y="218" class="lbl2" text-anchor="middle" fill="#7dd3fc">— kW</text>
+        <text x="240" y="254" class="sub" text-anchor="middle" style="font-weight:700" fill="#cbd5e1">INVERSOR</text>
+        <path id="flowPv"    class="flow idle" d="M120,88 C172,96 200,120 210,148"/>
+        <path id="flowBat"   class="flow idle" d="M270,148 C280,120 308,96 360,88"/>
+        <path id="flowGrid"  class="flow idle" d="M210,212 C200,240 172,264 120,272"/>
+        <path id="flowHouse" class="flow idle" d="M270,212 C280,240 308,264 360,272"/>
         <g id="gridX" style="display:none" stroke="#fb7185" stroke-width="4.5" stroke-linecap="round">
-          <line x1="172" y1="295" x2="190" y2="313"/>
-          <line x1="190" y1="295" x2="172" y2="313"/>
+          <line x1="172" y1="241" x2="190" y2="259"/>
+          <line x1="190" y1="241" x2="172" y2="259"/>
         </g>
       </svg>
       </div>
@@ -312,7 +333,7 @@
         <div class="mini-kpi"><span class="lbl">Capacidad BMS</span><span class="val" id="bdCap">—</span></div>
         <div class="mini-kpi"><span class="lbl">SN Batería</span><span class="val" id="bdSn">—</span></div>
         <div class="mini-kpi"><span class="lbl">Voltaje últ.</span><span class="val" id="bdVolt">—</span></div>
-        <div class="mini-kpi"><span class="lbl">Carga día <span id="bdChargeDay"></span></span><span class="val" id="bdCharge">—</span></div>
+        <div class="mini-kpi"><span class="lbl" id="bdChargeLbl">Carga día</span><span class="val" id="bdCharge">—</span></div>
         <div class="mini-kpi"><span class="lbl">Descarga día</span><span class="val" id="bdDischarge">—</span></div>
       </div>
     </div>
@@ -330,6 +351,12 @@
     <button id="btnLog">📋 Registro</button>
     <button id="btnSettings">⚙ Configuración</button>
   </div>
+  <div class="footer-gh">
+    <a class="gh-link" href="https://github.com/jaumequelo/livoltek-dashboard" target="_blank" rel="noopener" title="Repositorio en GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+    <span id="btnVersion" class="footer-version" title="Ver historial de versiones">v1.0.23</span>
+  </div>
   Hecho en Peñíscola con <span class="heart">❤</span> por
   <a href="https://jaumequelo.online" target="_blank" rel="noopener">Jaumequelo.online</a>
 </footer>
@@ -339,6 +366,13 @@
   <p class="hint">Próximos 3 días · fuente Open-Meteo</p>
   <div id="fcBody"></div>
   <div class="dlg-actions"><button id="btnCloseFc">Cerrar</button></div>
+</dialog>
+
+<dialog id="changelogDlg">
+  <h3>📜 Historial de versiones</h3>
+  <p class="hint">Registro de cambios del Dashboard Fotovoltaica Livoltek.</p>
+  <div class="cl-list" id="clList"></div>
+  <div class="dlg-actions"><button id="btnCloseCl">Cerrar</button></div>
 </dialog>
 
 <dialog id="logDlg">
@@ -401,6 +435,125 @@ let countdown = REFRESH_MS/1000, simToday=9.6, simSoc=62, simTotal=12486.3;
 let LOG = '', lastDays = null;
 let energyTrack = JSON.parse(localStorage.getItem('pvEnergyTrack')||'null') || {day:'',today:0,lastTs:null,hist:{}};
 
+/* ===== Changelog (editar aquí para nuevas versiones) ===== */
+const CHANGELOG = [
+  {v:'1.0.23', date:'2026-08-17', changes:[
+    'Tarjeta meteo como barra HTML independiente, a lo ancho de la tarjeta y bajo el título del diagrama.',
+    'Diagrama SVG reajustado: eliminado el hueco superior, mejor integración con la nueva tarjeta meteo.',
+    'Corregido "Invalid Date" en la etiqueta "Carga día" de las baterías.'
+  ]},
+  {v:'1.0.22', date:'2026-08-17', changes:[
+    'Colocados "Próxima actualización" y "Actualizado" en la misma línea del header.'
+  ]},
+  {v:'1.0.21', date:'2026-08-17', changes:[
+    'Colores de la flecha Red igual que Batería: verde exportando, ámbar importando.',
+    'Sin flujo de red: flecha gris con X roja en el centro y texto "Desconectado" bajo "Red".'
+  ]},
+  {v:'1.0.20', date:'2026-08-17', changes:[
+    'Flechas de Paneles→Inversor verdes mientras se genera, grises en reposo.',
+    'Flechas Inversor↔Batería: verde cargando, ámbar descargando, rojo con "BATERIA BAJA" si SOC ≤ 10%.',
+    'Flecha Inversor→Casa siempre verde.',
+    'Textos y potencias del diagrama ampliados para mejor lectura en móvil.'
+  ]},
+  {v:'1.0.19', date:'2026-08-16', changes:[
+    'Botón "Previsión" movido a su propia línea dentro del panel meteo.',
+    'Porcentaje de potencia de las placas (respecto a la capacidad kWp de la planta) bajo el nodo Paneles.'
+  ]},
+  {v:'1.0.18', date:'2026-08-16', changes:[
+    'Cabecera del meteo muestra el nombre de la ciudad detectada.',
+    'Botón "Previsión" que abre ventana flotante con la previsión de los próximos 3 días.',
+    'Gráfico "últimos días" con datos reales del informe diario del inversor.'
+  ]},
+  {v:'1.0.17', date:'2026-08-16', changes:[
+    'Ventana flotante de carga al abrir por primera vez y al pulsar "Actualizar".',
+    'Servidor fijado a EMEA/Europa (oculto de Configuración).',
+    'Botón "Obtener ubicación" dentro del campo ciudad con reverse-geocoding.'
+  ]},
+  {v:'1.0.16', date:'2026-08-16', changes:[
+    'Diagrama rediseñado estilo app oficial Livoltek: 4 nodos alrededor del inversor.',
+    'Flechas con dirección real del flujo y colores según estado.',
+    'Registro y Configuración movidos al pie antes del copyright centrado.',
+    'Meta robots noindex, nofollow.'
+  ]},
+  {v:'1.0.15', date:'2026-08-16', changes:[
+    'Rediseño responsive completo para móvil y tablet.',
+    'KPIs adaptativos, gráficos redibujados al rotar, botones táctiles grandes.'
+  ]},
+  {v:'1.0.14', date:'2026-08-16', changes:[
+    'Detección de dirección de la batería por el signo de la potencia.',
+    'Checkbox "Invertir sentido de batería" en Configuración.'
+  ]},
+  {v:'1.0.13', date:'2026-08-16', changes:[
+    'Registro como botón en cabecera con ventana flotante.',
+    'Botón "Copiar registro" con fallback para navegadores sin clipboard seguro.'
+  ]},
+  {v:'1.0.12', date:'2026-08-15', changes:[
+    'Copyright al pie: Hecho en Peñíscola con ❤ por Jaumequelo.online.',
+    'Corazón con animación de latido.'
+  ]},
+  {v:'1.0.11', date:'2026-08-15', changes:[
+    'Modo Demo con datos simulados cuando no hay credenciales.',
+    'Persistencia de configuración en localStorage.'
+  ]},
+  {v:'1.0.10', date:'2026-08-15', changes:[
+    'Auto-refresco cada 5 minutos con contador visible.',
+    'Badge de estado y de última actualización.'
+  ]},
+  {v:'1.0.9', date:'2026-08-15', changes:[
+    'Login contra la API Livoltek HESS con secuid + key → JWT.',
+    'Renovación automática de JWT expirado.'
+  ]},
+  {v:'1.0.8', date:'2026-08-15', changes:[
+    'Diagrama del sistema con flujos animados: paneles, inversor, casa, baterías y red.'
+  ]},
+  {v:'1.0.7', date:'2026-08-15', changes:[
+    'Tarjetas de potencias instantáneas, energía acumulada y estado de subsistemas.'
+  ]},
+  {v:'1.0.6', date:'2026-08-15', changes:[
+    'Integración con Open-Meteo para el meteo en directo (sin clave).',
+    'Geocodificación de ciudad configurable.'
+  ]},
+  {v:'1.0.5', date:'2026-08-15', changes:[
+    'Selección de planta desde la lista de plantas del usuario.',
+    'Info de planta: capacidad, país, zona horaria, dispositivos online.'
+  ]},
+  {v:'1.0.4', date:'2026-08-15', changes:[
+    'Resumen de baterías: SOC, ciclos, capacidad BMS, SN, voltaje, carga/descarga del día.'
+  ]},
+  {v:'1.0.3', date:'2026-08-14', changes:[
+    'Diálogo de Configuración con todos los parámetros de conexión.',
+    'Invertir sentido de red configurable.'
+  ]},
+  {v:'1.0.2', date:'2026-08-14', changes:[
+    'Registro de depuración (log) para las llamadas a la API.',
+    'Limpieza de la clave con saltos de línea mal escapados.'
+  ]},
+  {v:'1.0.1', date:'2026-08-14', changes:[
+    'Estructura base del dashboard con cabecera y grid de tarjetas.'
+  ]},
+  {v:'1.0.0', date:'2026-08-14', changes:[
+    'Versión inicial del Dashboard Fotovoltaica Livoltek.',
+    'Tema oscuro con paleta ámbar/verde/violeta.'
+  ]}
+];
+
+function renderChangelog(){
+  const list=$('clList'); list.innerHTML='';
+  CHANGELOG.forEach((c,i)=>{
+    const div=document.createElement('div');
+    div.className='cl-entry'+(i===0?' current':'');
+    div.innerHTML=`
+      <div class="cl-head">
+        <span class="cl-ver">v${c.v}${i===0?'<span class="cl-current-tag">actual</span>':''}</span>
+        <span class="cl-date">${c.date}</span>
+      </div>
+      <ul class="cl-body">${c.changes.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    list.appendChild(div);
+  });
+}
+$('btnVersion').onclick=()=>{ renderChangelog(); $('changelogDlg').showModal(); };
+$('btnCloseCl').onclick=()=>$('changelogDlg').close();
+
 const BASE = () => 'https://api-eu.livoltek-portal.com:8081';
 const log = m => { LOG = `[${new Date().toLocaleTimeString()}] ${m}\n` + LOG; $('logBox').textContent = LOG || 'Listo.'; };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
@@ -427,7 +580,6 @@ function showLoad(){ if(cfg.demo==='1') return; $('loadOverlay').hidden=false;
   clearTimeout(loadTimer); loadTimer=setTimeout(hideLoad,20000); }
 function hideLoad(){ $('loadOverlay').hidden=true; clearTimeout(loadTimer); }
 
-/* ===== Meteo ===== */
 const wmoText = c => {
   if(c==null) return '—';
   if(c===0) return 'Despejado'; if(c===1) return 'Mayormente despejado';
@@ -517,7 +669,6 @@ async function reverseCity(lat,lon){
   }catch(e){ return ''; }
 }
 
-/* ===== API Livoltek ===== */
 function normalizeKey(raw){
   let k = String(raw||'').trim();
   while(k.endsWith('\\r\\n')) k = k.slice(0,-6).trim();
@@ -657,7 +808,8 @@ function parseEss(e){
       arr.forEach(it=>{ c+=num(it.charge)||0; d+=num(it.discharge)||0;
         if(num(it.energyVolage)!=null) voltage=num(it.energyVolage); });
       charge=c; discharge=d;
-      day=new Date(keys[keys-1]).toLocaleDateString('es',{day:'2-digit',month:'2-digit'});
+      const dt=new Date(keys[keys-1]<1e12?keys[keys-1]*1000:keys[keys-1]);
+      day=isNaN(dt.getTime())?'':dt.toLocaleDateString('es',{day:'2-digit',month:'2-digit'});
     }
   }
   return { soc:num(e.currentSoc), cycles:e.cycleCount, cap:e.bmscapacity,
@@ -704,7 +856,6 @@ async function fetchReal(){
   };
 }
 
-/* ===== Estimación local ===== */
 function trackEnergy(pvKw){
   if(pvKw==null) return;
   const now=Date.now(); const k=dayKey();
@@ -720,13 +871,6 @@ function trackEnergy(pvKw){
   }
   energyTrack.lastTs=now;
   localStorage.setItem('pvEnergyTrack',JSON.stringify(energyTrack));
-}
-function estSums(){
-  const mK=dayKey().slice(0,7), yK=dayKey().slice(0,4);
-  let month=0,year=0,total=0;
-  for(const [k,v] of Object.entries(energyTrack.hist)){ total+=v;
-    if(k.startsWith(mK)) month+=v; if(k.startsWith(yK)) year+=v; }
-  return {month:month+energyTrack.today, year:year+energyTrack.today, total:total+energyTrack.today};
 }
 function buildLocalDays(){
   const days=Object.keys(energyTrack.hist).sort().slice(-6)
@@ -769,17 +913,16 @@ function demoData(){
     yearEnergy:+(simToday*178.6).toFixed(3),totalEnergy:simTotal,currentPower:pv,
     onlineDevices:'1/1',timestamp:Date.now(),
     statuses:{pv:null,grid:null,load:'consuming',battery:null},
-    ess:{soc:+simSoc.toFixed(2),cycles:'247',cap:'100',sn:'BAT-DEMO-001',charge:3.2,discharge:1.8,voltage:51.2,day:'hoy'}};
+    ess:{soc:+simSoc.toFixed(2),cycles:'247',cap:'100',sn:'BAT-DEMO-001',charge:3.2,discharge:1.8,voltage:51.2,day:'15/08'}};
 }
 function demoHistory(){ const d=[]; for(let i=3;i>=0;i--){ const dt=new Date(Date.now()-i*864e5);
   d.push({label:dt.toLocaleDateString('es',{day:'2-digit',month:'2-digit'}),v:+(12+Math.random()*12).toFixed(2)});} return d; }
 
-/* ===== Geometría de flujos ===== */
 const GEO={
-  flowPv:   {a:[120,142], b:[210,202], c1:[172,150], c2:[200,174]},
-  flowBat:  {a:[270,202], b:[360,142], c1:[280,174], c2:[308,150]},
-  flowGrid: {a:[210,266], b:[120,326], c1:[200,294], c2:[172,318]},
-  flowHouse:{a:[270,266], b:[360,326], c1:[280,294], c2:[308,318]}
+  flowPv:   {a:[120,88], b:[210,148], c1:[172,96], c2:[200,120]},
+  flowBat:  {a:[270,148], b:[360,88], c1:[280,120], c2:[308,96]},
+  flowGrid: {a:[210,212], b:[120,272], c1:[200,240], c2:[172,264]},
+  flowHouse:{a:[270,212], b:[360,272], c1:[280,240], c2:[308,264]}
 };
 function applyFlow(id,p,reverse){
   const el=$(id), g=GEO[id];
@@ -804,7 +947,6 @@ function plantCapacity(){
 function apply(d, ex){
   ex = ex || {};
 
-  /* --- PV --- */
   const pvOn=(d.pvPower??0)>0.02;
   const fpv=$('flowPv');
   fpv.classList.toggle('on',pvOn);
@@ -815,13 +957,11 @@ function apply(d, ex){
   $('txtPvPct').textContent = pct==null ? '—' : esNum(Math.min(pct,999),1)+'%';
   $('txtPvPct').setAttribute('fill', pvOn ? '#34d399' : '#8fa3bf');
 
-  /* --- Casa --- */
   const houseOn=(d.housePower??0)>=0.02;
   if(houseOn){ applyFlow('flowHouse',d.housePower,false); $('txtHouse').textContent=fmtKW(d.housePower); }
   else{ $('flowHouse').classList.add('idle'); $('txtHouse').textContent='—'; }
   $('txtHouse').setAttribute('fill','#34d399');
 
-  /* --- Batería --- */
   const socN=d.batterySoc;
   const charging=(d.batteryPower??0)>0.02;
   const discharging=(d.batteryPower??0)<-0.02;
@@ -848,7 +988,6 @@ function apply(d, ex){
     fb.classList.add('idle'); $('txtBat').textContent='—'; $('txtBat').setAttribute('fill','#8fa3bf');
   }
 
-  /* --- Red --- */
   const gridZero = d.gridPower==null || Math.abs(d.gridPower)<0.02;
   const gridImportNow = !gridZero && (d.gridPower??0)<0;
   const fg=$('flowGrid');
@@ -883,13 +1022,12 @@ function apply(d, ex){
   $('valSoc').textContent=socN==null?'—':esNum(socN,1)+'%';
   const bf=$('batFill');
   if(socN!=null){ const hh=Math.max(2,38*Math.min(100,socN)/100);
-    bf.setAttribute('height',hh); bf.setAttribute('y',87+(38-hh));
+    bf.setAttribute('height',hh); bf.setAttribute('y',33+(38-hh));
     bf.setAttribute('fill', socN<10 ? '#fb7185' : socN<30 ? '#fbbf24' : '#34d399');
   } else bf.setAttribute('height',0);
   $('txtSoc').textContent=socN==null?'—':esNum(socN,1)+'%';
   $('txtSoc').setAttribute('fill', low ? '#fb7185' : '#a78bfa');
 
-  /* Energía acumulada */
   if(cfg.demo!=='1') trackEnergy(d.pvPower);
   let usedEst=false;
 
@@ -976,7 +1114,7 @@ function apply(d, ex){
   $('bdCap').textContent=ess.cap!=null?String(ess.cap):'—';
   $('bdSn').textContent=ess.sn||'—';
   $('bdVolt').textContent=ess.voltage!=null?esNum(ess.voltage,1)+' V':'—';
-  $('bdChargeDay').textContent=ess.day||'';
+  $('bdChargeLbl').textContent = ess.day ? 'Carga día '+ess.day : 'Carga día';
   $('bdCharge').textContent=ess.charge!=null?esNum(ess.charge,2)+' kWh':'—';
   $('bdDischarge').textContent=ess.discharge!=null?esNum(ess.discharge,2)+' kWh':'—';
 
