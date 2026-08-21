@@ -137,7 +137,6 @@
   .footer a:hover{text-decoration:underline}
   .footer .heart{color:var(--rose);display:inline-block;animation:beat 1.6s ease-in-out infinite}
   @keyframes beat{0%,100%{transform:scale(1)}10%{transform:scale(1.25)}20%{transform:scale(1)}30%{transform:scale(1.15)}40%{transform:scale(1)}}
-  /* Changelog */
   #changelogDlg{width:min(520px,92vw)}
   .cl-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:60vh;overflow-y:auto;padding-right:4px}
   .cl-entry{background:#0a1120;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -216,7 +215,7 @@
         <div class="wx-main">
           <span class="wx-city" id="wxCity">📍 —</span>
           <span class="wx-now" id="wxNow">🌡 — · —</span>
-          <span class="wx-sun" id="wxSun">🌅 — · 🌇 —</span>
+          <span class="wx-sun" id="wxSun">🌅 — ·  —</span>
         </div>
         <button id="btnForecast">📅 Previsión próximos 3 días</button>
       </div>
@@ -355,7 +354,7 @@
     <a class="gh-link" href="https://github.com/jaumequelo/livoltek-dashboard" target="_blank" rel="noopener" title="Repositorio en GitHub">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
     </a>
-    <span id="btnVersion" class="footer-version" title="Ver historial de versiones">v1.0.23</span>
+    <span id="btnVersion" class="footer-version" title="Ver historial de versiones">v1.0.24</span>
   </div>
   Hecho en Peñíscola con <span class="heart">❤</span> por
   <a href="https://jaumequelo.online" target="_blank" rel="noopener">Jaumequelo.online</a>
@@ -427,16 +426,23 @@
 
 <script>
 const REFRESH_MS = 300000;
+const GRID_EPS = 0.01;   // umbral "sin flujo" de red (kW)
+const FLOW_EPS = 0.02;   // umbral "sin flujo" del resto de flujos
 const $ = id => document.getElementById(id);
 let cfg = JSON.parse(localStorage.getItem('pvDashCfg')||'null') ||
   {demo:'1',userToken:'',secuid:'',key:'',siteId:'',siteName:'',city:'',userType:'0',flipGrid:false,flipBat:false,unit:'auto',authToken:null,tokenExp:0,geo:null,devId:null,devSn:null};
 cfg.unit = cfg.unit || 'auto';
 let countdown = REFRESH_MS/1000, simToday=9.6, simSoc=62, simTotal=12486.3;
-let LOG = '', lastDays = null;
+let LOG = '', lastDays = null, hadData = false;
 let energyTrack = JSON.parse(localStorage.getItem('pvEnergyTrack')||'null') || {day:'',today:0,lastTs:null,hist:{}};
 
-/* ===== Changelog (editar aquí para nuevas versiones) ===== */
 const CHANGELOG = [
+  {v:'1.0.24', date:'2026-08-21', changes:[
+    'Detección de flujo de red reforzada: búsqueda de múltiples alias de campo (powerGridPower, gridPower, utilityPower…) insensible a mayúsculas.',
+    'Si el medidor no informa, la red se calcula por balance de potencia: PV − consumo − batería (marcado con ≈).',
+    'Sin estado textual, el signo manda: negativo = entra (import). Umbral "sin flujo" reducido a 0,01 kW.',
+    'Más estabilidad: timeout de 12 s por petición, reintento automático ante fallos de red y conservación de los últimos datos en pantalla si falla una actualización.'
+  ]},
   {v:'1.0.23', date:'2026-08-17', changes:[
     'Tarjeta meteo como barra HTML independiente, a lo ancho de la tarjeta y bajo el título del diagrama.',
     'Diagrama SVG reajustado: eliminado el hueco superior, mejor integración con la nueva tarjeta meteo.',
@@ -562,6 +568,18 @@ const pick = (o,names) => { for(const n of names){ if(o && o[n]!=null && o[n]!==
 const parseMaybeJson = s => { if(typeof s==='string'){ try{ return JSON.parse(s); }catch(e){ return null; } } return s; };
 const dayKey = d => (d||new Date()).toLocaleDateString('sv');
 
+/* Búsqueda de campo insensible a mayúsculas con varios alias */
+function getField(o, names){
+  if(!o || typeof o!=='object') return null;
+  const lower={};
+  for(const k of Object.keys(o)) lower[k.toLowerCase().replace(/[_\s]/g,'')] = o[k];
+  for(const n of names){
+    const v = lower[n.toLowerCase().replace(/[_\s]/g,'')];
+    if(v!==undefined && v!==null && v!=='') return v;
+  }
+  return null;
+}
+
 const esNum = (v,d=2) => v==null?'—':Number(v).toFixed(d).replace('.',',');
 const fmtCount = s => { const m=Math.floor(s/60), ss=s%60; return m>0 ? `${m}m ${ss}s` : `${ss}s`; };
 function toKw(v){
@@ -579,6 +597,13 @@ let loadTimer=null;
 function showLoad(){ if(cfg.demo==='1') return; $('loadOverlay').hidden=false;
   clearTimeout(loadTimer); loadTimer=setTimeout(hideLoad,20000); }
 function hideLoad(){ $('loadOverlay').hidden=true; clearTimeout(loadTimer); }
+
+/* ===== fetch con timeout (estabilidad) ===== */
+async function fetchT(url, opts={}, ms=12000){
+  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(), ms);
+  try{ return await fetch(url, {...opts, signal:ctl.signal}); }
+  finally{ clearTimeout(t); }
+}
 
 const wmoText = c => {
   if(c==null) return '—';
@@ -599,7 +624,7 @@ async function ensureGeo(){
   if(cfg.geo && (!city || cfg.geo.city===city)) return true;
   if(!city) return !!cfg.geo;
   try{
-    const g = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=es').then(r=>r.json());
+    const g = await fetchT('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=es').then(r=>r.json());
     const r0 = g.results && g.results[0];
     if(!r0){ log('⚠️ Ciudad no encontrada: '+city); return !!cfg.geo; }
     cfg.geo={city,lat:r0.latitude,lon:r0.longitude}; save(); return true;
@@ -608,7 +633,7 @@ async function ensureGeo(){
 async function loadWeather(){
   if(!await ensureGeo() || !cfg.geo) return;
   try{
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1`).then(r=>r.json());
+    const w = await fetchT(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1`).then(r=>r.json());
     const t=w.current?.temperature_2m, code=w.current?.weather_code;
     const sr=(w.daily?.sunrise?.[0]||'').slice(11,16), ss=(w.daily?.sunset?.[0]||'').slice(11,16);
     $('wxCity').textContent = '📍 '+(cfg.geo.city||cfg.city||'METEO').toUpperCase();
@@ -622,7 +647,7 @@ $('btnForecast').onclick = async () => {
   try{
     if(!await ensureGeo() || !cfg.geo) throw new Error('Configura primero la ciudad o pulsa 📍 Obtener ubicación.');
     $('fcCity').textContent = cfg.geo.city||'';
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=4`).then(r=>r.json());
+    const w = await fetchT(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.geo.lat}&longitude=${cfg.geo.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=4`).then(r=>r.json());
     const d=w.daily; let html='<div class="fc-grid">';
     for(let i=1;i<=3;i++){
       const date=new Date(d.time[i]+'T12:00:00');
@@ -658,12 +683,12 @@ $('btnGeo').onclick = () => {
 };
 async function reverseCity(lat,lon){
   try{
-    const g = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`).then(r=>r.json());
+    const g = await fetchT(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`).then(r=>r.json());
     const c = g.city || g.locality || g.principalSubdivision || '';
     if(c) return c;
   }catch(e){}
   try{
-    const n = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es`).then(r=>r.json());
+    const n = await fetchT(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es`).then(r=>r.json());
     const a = n.address || {};
     return a.city || a.town || a.village || a.municipality || a.county || '';
   }catch(e){ return ''; }
@@ -685,7 +710,7 @@ function decodeJwtExp(jwt){
 async function doLogin(){
   if(!cfg.secuid || !cfg.key) throw new Error('Faltan Security ID y/o API Key (portal → My Profile → Secure ID).');
   log('🔐 Login en '+BASE()+'…');
-  const r = await fetch(BASE()+'/hess/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+  const r = await fetchT(BASE()+'/hess/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({secuid:cfg.secuid.trim(),key:normalizeKey(cfg.key)})});
   const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
   log('login → '+r.status+' '+raw.slice(0,200));
@@ -697,12 +722,19 @@ async function doLogin(){
   log('✅ JWT obtenido.');
 }
 async function ensureAuth(){ if(!cfg.authToken || !cfg.tokenExp || cfg.tokenExp < Date.now()/1000+60) await doLogin(); }
+
 async function apiGet(path, retry=true){
   await ensureAuth();
   if(!cfg.userToken) throw new Error('Falta el token de usuario.');
   const sep = path.includes('?')?'&':'?';
   const url = BASE()+path+sep+'userToken='+encodeURIComponent(cfg.userToken)+'&userType='+(cfg.userType||'0');
-  const r = await fetch(url,{headers:{'Authorization':cfg.authToken,'Accept':'application/json'}});
+  const headers={headers:{'Authorization':cfg.authToken,'Accept':'application/json'}};
+  let r;
+  try{ r = await fetchT(url,headers); }
+  catch(e){
+    if(retry){ log('🔁 Reintento GET '+path); r = await fetchT(url,headers); }
+    else throw e;
+  }
   const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
   log('GET '+path+' → '+r.status+'\n'+raw.slice(0,280));
   if(!r.ok) throw new Error('HTTP '+r.status+' en '+path);
@@ -718,7 +750,10 @@ async function apiGet(path, retry=true){
 async function apiPost(path, bodyObj){
   await ensureAuth();
   const url = BASE()+path+'?userToken='+encodeURIComponent(cfg.userToken)+'&userType='+(cfg.userType||'0');
-  const r = await fetch(url,{method:'POST',headers:{'Authorization':cfg.authToken,'Content-Type':'application/json'},body:JSON.stringify(bodyObj)});
+  let r;
+  try{ r = await fetchT(url,{method:'POST',headers:{'Authorization':cfg.authToken,'Content-Type':'application/json'},body:JSON.stringify(bodyObj)}); }
+  catch(e){ log('🔁 Reintento POST '+path);
+    r = await fetchT(url,{method:'POST',headers:{'Authorization':cfg.authToken,'Content-Type':'application/json'},body:JSON.stringify(bodyObj)}); }
   const raw = await r.text(); let j=null; try{ j=JSON.parse(raw); }catch(e){}
   log('POST '+path+' → '+r.status+'\n'+raw.slice(0,280));
   if(!r.ok) throw new Error('HTTP '+r.status+' en '+path);
@@ -824,14 +859,16 @@ async function fetchReal(){
     apiGet('/hess/api/site/'+cfg.siteId+'/ESS').catch(e=>{log('ESS: '+e.message);return null;})
   ]);
   const p=pf||{}, o=ov||{};
-  let grid=toKw(p.powerGridPower);
-  const gs=String(p.powerGridStatus||'').toLowerCase();
-  let gridImport=null;
-  if(/import|buy|consum|take/.test(gs)) gridImport=grid>0; else if(/export|sell|feed/.test(gs)) gridImport=grid<0;
-  if(cfg.flipGrid && grid!=null) gridImport = gridImport==null ? true : !gridImport;
 
-  const batRaw = toKw(p.energyPower);
-  const bs=String(p.energyStatus||'').toLowerCase();
+  /* Lectura robusta de campos (alias + insensible a mayúsculas/guiones) */
+  const pv    = toKw(getField(p,['pvpower','power','activepower','pac','generationpower','totalpvpower'])) ?? toKw(o.currentPower);
+  const house = toKw(getField(p,['loadpower','housepower','homepower','consumption','localload','loadactivepower']));
+  const batRaw= toKw(getField(p,['energypower','batterypower','batpower','chargepower','bapower']));
+  let   grid  = toKw(getField(p,['powergridpower','gridpower','powergrid','utilitypower','grid','gridactivepower','meterpower']));
+
+  const gs=String(getField(p,['powergridstatus','gridstatus'])||'').toLowerCase();
+  const bs=String(getField(p,['energystatus','batterystatus'])||'').toLowerCase();
+
   let bat = batRaw;
   if(bat!=null){
     if(/dis/.test(bs))      bat = -Math.abs(batRaw);
@@ -839,19 +876,33 @@ async function fetchReal(){
     if(cfg.flipBat) bat = -bat;
   }
 
-  const pv = toKw(p.pvPower) ?? toKw(o.currentPower);
+  /* RED: si el medidor no informa, balance de potencia PV − consumo − batería */
+  let gridEstimated=false;
+  if(grid==null && pv!=null && house!=null){
+    grid = pv - house - (bat||0);   // + = exporta, − = importa
+    gridEstimated = true;
+  }
+  let gridImport;
+  if(/import|buy|consum|take|compra|importando/.test(gs))      gridImport = true;
+  else if(/export|sell|feed|venta|exportando/.test(gs))        gridImport = false;
+  else if(grid!=null)                                          gridImport = grid < 0;
+  if(cfg.flipGrid && grid!=null && gridImport!=null) gridImport = !gridImport;
+
+  const gridZero = grid==null || Math.abs(grid)<GRID_EPS;
   return {
-    pvPower:pv, housePower:toKw(p.loadPower),
-    gridPower: grid==null?null:(gridImport?-Math.abs(grid):Math.abs(grid)),
+    pvPower:pv, housePower:house,
+    gridPower: gridZero?null:(gridImport? -Math.abs(grid): Math.abs(grid)),
+    gridEstimated,
     batteryPower: bat,
-    batterySoc: num(p.energySoc) ?? num((ess||{}).currentSoc),
+    batterySoc: num(getField(p,['energysoc','batterysoc','soc'])) ?? num((ess||{}).currentSoc),
     todayEnergy: num(o.eoutDaily), monthEnergy: num(o.eoutMonth),
     yearEnergy: num(o.eoutCurrentYear),
     totalEnergy: num(pick(o,['eTotalToGrid','etotalToGrid','eTotaltoGrid','totalEnergy'])),
     currentPower: num(o.currentPower),
     onlineDevices: o.onlineDevice,
     timestamp: p.timestamp || o.updateTime,
-    statuses:{ pv:p.pvStatus, grid:p.powerGridStatus, load:p.loadStatus, battery:p.energyStatus },
+    statuses:{ pv:getField(p,['pvstatus']), grid:getField(p,['powergridstatus','gridstatus']),
+               load:getField(p,['loadstatus']), battery:getField(p,['energystatus','batterystatus']) },
     ess: parseEss(ess)
   };
 }
@@ -908,7 +959,7 @@ function demoData(){
   const bat=+Math.min(Math.max(pv-house,-1.5),2).toFixed(3);
   simSoc=Math.min(100,Math.max(5,simSoc+bat*0.12)); simToday+=pv*REFRESH_MS/3600000;
   return {pvPower:pv,housePower:house,batteryPower:bat,batterySoc:+simSoc.toFixed(2),
-    gridPower:+(pv-house-bat).toFixed(3),
+    gridPower:+(pv-house-bat).toFixed(3), gridEstimated:false,
     todayEnergy:+simToday.toFixed(3),monthEnergy:+(simToday*14.2).toFixed(3),
     yearEnergy:+(simToday*178.6).toFixed(3),totalEnergy:simTotal,currentPower:pv,
     onlineDevices:'1/1',timestamp:Date.now(),
@@ -932,7 +983,7 @@ function applyFlow(id,p,reverse){
   el.classList.remove('idle');
 }
 function setLed(el,cls){ el.className='led '+cls; }
-const fmtStatus = s => { if(!s) return '—';
+const fmtStatus = s => { if(s==null||s==='') return '—';
   const m={normal:'Normal',online:'Online',offline:'Offline',fault:'Fallo',charging:'Cargando',
     discharging:'Descargando',standby:'Standby',import:'Importando',export:'Exportando',idle:'Inactivo',
     on:'Activo',generating:'Generando',consuming:'Consumiendo'};
@@ -946,8 +997,9 @@ function plantCapacity(){
 
 function apply(d, ex){
   ex = ex || {};
+  hadData = true;
 
-  const pvOn=(d.pvPower??0)>0.02;
+  const pvOn=(d.pvPower??0)>FLOW_EPS;
   const fpv=$('flowPv');
   fpv.classList.toggle('on',pvOn);
   if(pvOn){ applyFlow('flowPv',d.pvPower,false); $('txtPv').textContent=fmtKW(d.pvPower); $('txtPv').setAttribute('fill','#34d399'); }
@@ -957,18 +1009,18 @@ function apply(d, ex){
   $('txtPvPct').textContent = pct==null ? '—' : esNum(Math.min(pct,999),1)+'%';
   $('txtPvPct').setAttribute('fill', pvOn ? '#34d399' : '#8fa3bf');
 
-  const houseOn=(d.housePower??0)>=0.02;
+  const houseOn=(d.housePower??0)>=FLOW_EPS;
   if(houseOn){ applyFlow('flowHouse',d.housePower,false); $('txtHouse').textContent=fmtKW(d.housePower); }
   else{ $('flowHouse').classList.add('idle'); $('txtHouse').textContent='—'; }
   $('txtHouse').setAttribute('fill','#34d399');
 
   const socN=d.batterySoc;
-  const charging=(d.batteryPower??0)>0.02;
-  const discharging=(d.batteryPower??0)<-0.02;
+  const charging=(d.batteryPower??0)>FLOW_EPS;
+  const discharging=(d.batteryPower??0)<-FLOW_EPS;
   const low = socN!=null && socN<=10;
   const batAbs=d.batteryPower==null?null:Math.abs(d.batteryPower);
   const batRev=(d.batteryPower??0)<0;
-  const batMoving=batAbs!=null&&batAbs>=0.02;
+  const batMoving=batAbs!=null&&batAbs>=FLOW_EPS;
   const fb=$('flowBat');
   fb.classList.remove('charge','discharge','low');
   if(low){
@@ -988,10 +1040,11 @@ function apply(d, ex){
     fb.classList.add('idle'); $('txtBat').textContent='—'; $('txtBat').setAttribute('fill','#8fa3bf');
   }
 
-  const gridZero = d.gridPower==null || Math.abs(d.gridPower)<0.02;
+  const gridZero = d.gridPower==null || Math.abs(d.gridPower)<GRID_EPS;
   const gridImportNow = !gridZero && (d.gridPower??0)<0;
   const fg=$('flowGrid');
   fg.classList.toggle('import', gridImportNow);
+  const est = d.gridEstimated ? '≈' : '';
   if(gridZero){
     fg.classList.add('idle');
     $('gridX').style.display='';
@@ -999,14 +1052,14 @@ function apply(d, ex){
   }else{
     $('gridX').style.display='none';
     applyFlow('flowGrid',Math.abs(d.gridPower),gridImportNow);
-    $('txtGrid').textContent=fmtKW(Math.abs(d.gridPower));
+    $('txtGrid').textContent=est+fmtKW(Math.abs(d.gridPower));
     $('txtGrid').setAttribute('fill',gridImportNow?'#fbbf24':'#34d399');
   }
 
   const g=$('valGrid');
   if(gridZero){ g.textContent='Desconectado de la red'; g.className='v c-mut'; }
-  else{ g.textContent=(d.gridPower>0?'Export ':'Import ')+fmtKW(Math.abs(d.gridPower));
-        g.className='v '+((d.gridPower??0)>=0?'c-eme':'c-amber'); }
+  else{ g.textContent=(gridImportNow?'Import ':'Export ')+est+fmtKW(Math.abs(d.gridPower));
+        g.className='v '+(gridImportNow?'c-amber':'c-eme'); }
 
   $('valPv').textContent=fmtKW(d.pvPower);
   $('valHouse').textContent=fmtKW(d.housePower);
@@ -1079,11 +1132,11 @@ function apply(d, ex){
   const pvGen=(d.pvPower??0)>0.05;
   $('stPv').textContent = pvGen ? 'Generando' : fmtStatus(st.pv);
   $('stPv').className = 'val '+(pvGen?'val-ok':'');
-  setLed($('ledPv'), pvGen?'led-ok':(st.pv?'led-ok':'led-off'));
-  $('stGrid').textContent = gridZero ? 'Desconectado' : fmtStatus(st.grid);
-  $('stGrid').className = 'val '+(gridZero?'val-mut':'');
+  setLed($('ledPv'), pvGen?'led-ok':(st.pv!=null&&st.pv!==''?'led-ok':'led-off'));
+  $('stGrid').textContent = gridZero ? 'Desconectado' : (gridImportNow?'Importando':'Exportando');
+  $('stGrid').className = 'val '+(gridZero?'val-mut':(gridImportNow?'val-warn':'val-ok'));
   setLed($('ledGrid'), gridZero?'led-off':'led-ok');
-  const consuming=/consum/.test(String(st.load).toLowerCase()) || (d.housePower??0)>0.05;
+  const consuming=/consum/.test(String(st.load??'').toLowerCase()) || (d.housePower??0)>FLOW_EPS;
   $('stLoad').textContent = consuming ? 'Consumiendo' : fmtStatus(st.load);
   $('stLoad').className = 'val '+(consuming?'val-ok':'');
   setLed($('ledLoad'), consuming?'led-ok':'led-off');
@@ -1157,8 +1210,12 @@ async function refresh(withOverlay=false){
       await loadHistory(ex);
     }
   }
-  catch(e){ log('❌ '+e.message+(e instanceof TypeError?' (¿CORS?)':''));
-    const b=$('statusBadge'); b.textContent='Error'; b.className='badge off'; }
+  catch(e){
+    log('❌ '+e.message+(e instanceof TypeError?' (¿CORS?)':''));
+    const b=$('statusBadge');
+    if(hadData){ b.textContent='En línea (reintentando)'; b.className='badge on'; }
+    else{ b.textContent='Error'; b.className='badge off'; }
+  }
   finally{ $('btnRefresh').classList.remove('spin'); countdown=REFRESH_MS/1000;
     $('nextIn').textContent='Próxima actualización: '+fmtCount(countdown);
     if(withOverlay) hideLoad(); }
